@@ -1,0 +1,4 @@
+Ligar o Servidor
+
+cd C:\SIAC-STUDIO\site
+npm run dev
