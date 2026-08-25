@@ -89,34 +89,78 @@ export default async function ProductPage({
           {/* INFORMAÇÕES */}
           <div className="flex flex-col justify-center">
 
+            {/* CATEGORIA */}
             <div>
               <span className="inline-block rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-400">
                 {product.categoria}
               </span>
             </div>
 
+            {/* NOME */}
             <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-5xl">
               {product.nome}
             </h1>
 
+            {/* DESCRIÇÃO */}
             <p className="mt-6 text-lg leading-8 text-gray-400">
               {product.descricao}
             </p>
 
-            {/* TIPO DO PRODUTO */}
-            <div className="mt-8 rounded-xl border border-gray-800 bg-gray-950 p-5">
+            {/* INFORMAÇÕES DO ARQUIVO */}
+            <div className="mt-8 rounded-2xl border border-gray-800 bg-gray-950 p-6">
 
-              <p className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-                Tipo de produto
-              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-xl">
+                  📦
+                </div>
 
-              <p className="mt-2 text-lg font-semibold">
-                📦 Arquivo digital
-              </p>
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+                    Produto digital
+                  </p>
 
-              <p className="mt-1 text-sm text-gray-400">
-                Produto digital, sem envio físico.
-              </p>
+                  <p className="mt-1 font-semibold">
+                    Arquivo para download
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-4">
+
+                <div className="rounded-xl border border-gray-800 p-4">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">
+                    Formato
+                  </p>
+
+                  <p className="mt-2 font-semibold">
+                    {product.formato}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-gray-800 p-4">
+                  <p className="text-xs uppercase tracking-wider text-gray-500">
+                    Tamanho
+                  </p>
+
+                  <p className="mt-2 font-semibold">
+                    {product.tamanho}
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+
+                <p className="font-semibold text-green-400">
+                  ✓ Download digital
+                </p>
+
+                <p className="mt-1 text-sm leading-6 text-gray-400">
+                  O acesso ao arquivo será liberado após a
+                  confirmação do pagamento.
+                </p>
+
+              </div>
 
             </div>
 
@@ -145,21 +189,21 @@ export default async function ProductPage({
 
               <div className="rounded-xl border border-gray-800 p-4">
                 <p className="font-semibold">
-                  ✓ Download digital
+                  ✓ Arquivo digital
                 </p>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Acesso ao arquivo após a compra.
+                  Sem envio físico.
                 </p>
               </div>
 
               <div className="rounded-xl border border-gray-800 p-4">
                 <p className="font-semibold">
-                  ✓ Compra segura
+                  ✓ Acesso após pagamento
                 </p>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Processo de compra simples.
+                  Download liberado após aprovação.
                 </p>
               </div>
 
@@ -178,12 +222,12 @@ export default async function ProductPage({
 
             </div>
 
-            {/* BOTÃO */}
+            {/* ADICIONAR AO CARRINHO */}
             <div className="mt-8">
               <AddToCartButton product={product} />
             </div>
 
-            {/* CARRINHO */}
+            {/* VER CARRINHO */}
             <Link
               href="/carrinho"
               className="mt-4 block rounded-lg border border-gray-700 px-6 py-4 text-center font-semibold transition hover:border-blue-500 hover:text-blue-400"
@@ -191,9 +235,11 @@ export default async function ProductPage({
               🛒 Ver carrinho
             </Link>
 
+            {/* AVISO */}
             <p className="mt-5 text-center text-xs leading-5 text-gray-500">
-              Após a confirmação do pagamento, o acesso ao arquivo
-              digital será disponibilizado conforme as condições da compra.
+              Este produto é digital. Nenhum produto físico será
+              enviado. O acesso ao arquivo será disponibilizado
+              após a confirmação do pagamento.
             </p>
 
           </div>

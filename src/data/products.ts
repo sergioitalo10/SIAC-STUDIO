@@ -7,6 +7,11 @@
   descricao: string;
   destaque?: boolean;
   tags?: string[];
+
+  tipoProduto: "digital";
+  formato: string;
+  arquivo: string;
+  tamanho: string;
 };
 
 export const products: Product[] = [
@@ -20,6 +25,10 @@ export const products: Product[] = [
       "Arte digital profissional para sublimação total, pronta para personalização.",
     destaque: true,
     tags: ["premium", "sublimação", "camisa"],
+    tipoProduto: "digital",
+    formato: "ZIP",
+    arquivo: "arte-modelo-premium.zip",
+    tamanho: "250 MB",
   },
 
   {
@@ -32,6 +41,10 @@ export const products: Product[] = [
       "Modelo de arte profissional para camisas de pesca e personalização esportiva.",
     destaque: true,
     tags: ["pesca", "esporte", "camisa"],
+    tipoProduto: "digital",
+    formato: "ZIP",
+    arquivo: "arte-pesca-premium.zip",
+    tamanho: "280 MB",
   },
 
   {
@@ -44,6 +57,10 @@ export const products: Product[] = [
       "Modelo de arte esportiva para camisas de futebol e personalização.",
     destaque: true,
     tags: ["futebol", "esporte", "camisa"],
+    tipoProduto: "digital",
+    formato: "ZIP",
+    arquivo: "arte-futebol-premium.zip",
+    tamanho: "220 MB",
   },
 
   {
@@ -56,6 +73,10 @@ export const products: Product[] = [
       "Modelo de arte profissional para camisas de motocross e esportes radicais.",
     destaque: true,
     tags: ["motocross", "moto", "esporte"],
+    tipoProduto: "digital",
+    formato: "ZIP",
+    arquivo: "arte-motocross-premium.zip",
+    tamanho: "310 MB",
   },
 
   {
@@ -68,6 +89,10 @@ export const products: Product[] = [
       "Arte digital para camisas de ciclismo e equipes esportivas.",
     destaque: false,
     tags: ["ciclismo", "bike", "esporte"],
+    tipoProduto: "digital",
+    formato: "ZIP",
+    arquivo: "arte-ciclismo-premium.zip",
+    tamanho: "240 MB",
   },
 
   {
@@ -80,5 +105,9 @@ export const products: Product[] = [
       "Arte moderna para camisetas fitness, academias e equipes esportivas.",
     destaque: false,
     tags: ["fitness", "academia", "esporte"],
+    tipoProduto: "digital",
+    formato: "ZIP",
+    arquivo: "arte-fitness-premium.zip",
+    tamanho: "210 MB",
   },
 ];
