@@ -228,11 +228,12 @@ export default function CartPage() {
               {/* AÇÕES */}
               <div className="mt-6 space-y-3">
 
-                <button
-                  className="w-full rounded-lg bg-blue-600 px-6 py-4 font-semibold transition hover:bg-blue-500"
+                <Link
+                  href="/checkout"
+                  className="block w-full rounded-lg bg-blue-600 px-6 py-4 text-center font-semibold transition hover:bg-blue-500"
                 >
                   Finalizar compra
-                </button>
+                </Link>
 
                 <Link
                   href="/"
