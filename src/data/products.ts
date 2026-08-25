@@ -1,10 +1,12 @@
-export type Product = {
+﻿export type Product = {
   id: number;
   nome: string;
   categoria: string;
   preco: number;
   imagem: string;
   descricao: string;
+  destaque?: boolean;
+  tags?: string[];
 };
 
 export const products: Product[] = [
@@ -14,7 +16,10 @@ export const products: Product[] = [
     categoria: "Sublimação Total",
     preco: 14.90,
     imagem: "/produtos/produto-teste.png",
-    descricao: "Arte digital profissional para sublimação total.",
+    descricao:
+      "Arte digital profissional para sublimação total, pronta para personalização.",
+    destaque: true,
+    tags: ["premium", "sublimação", "camisa"],
   },
 
   {
@@ -23,7 +28,10 @@ export const products: Product[] = [
     categoria: "Pesca",
     preco: 14.90,
     imagem: "/produtos/produto-teste.png",
-    descricao: "Modelo de arte para camisas de pesca.",
+    descricao:
+      "Modelo de arte profissional para camisas de pesca e personalização esportiva.",
+    destaque: true,
+    tags: ["pesca", "esporte", "camisa"],
   },
 
   {
@@ -32,7 +40,10 @@ export const products: Product[] = [
     categoria: "Futebol",
     preco: 12.90,
     imagem: "/produtos/produto-teste.png",
-    descricao: "Modelo de arte para camisas esportivas.",
+    descricao:
+      "Modelo de arte esportiva para camisas de futebol e personalização.",
+    destaque: true,
+    tags: ["futebol", "esporte", "camisa"],
   },
 
   {
@@ -41,6 +52,33 @@ export const products: Product[] = [
     categoria: "Motocross",
     preco: 16.90,
     imagem: "/produtos/produto-teste.png",
-    descricao: "Modelo de arte para camisas de motocross.",
+    descricao:
+      "Modelo de arte profissional para camisas de motocross e esportes radicais.",
+    destaque: true,
+    tags: ["motocross", "moto", "esporte"],
+  },
+
+  {
+    id: 5,
+    nome: "Arte Ciclismo Premium",
+    categoria: "Ciclismo",
+    preco: 15.90,
+    imagem: "/produtos/produto-teste.png",
+    descricao:
+      "Arte digital para camisas de ciclismo e equipes esportivas.",
+    destaque: false,
+    tags: ["ciclismo", "bike", "esporte"],
+  },
+
+  {
+    id: 6,
+    nome: "Arte Fitness Premium",
+    categoria: "Fitness",
+    preco: 13.90,
+    imagem: "/produtos/produto-teste.png",
+    descricao:
+      "Arte moderna para camisetas fitness, academias e equipes esportivas.",
+    destaque: false,
+    tags: ["fitness", "academia", "esporte"],
   },
 ];
