@@ -1,17 +1,75 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useCart } from "@/context/CartContext";
+import type { Order } from "@/types/order";
+import { createOrder } from "@/lib/orders";
 
 export default function CheckoutPage() {
   const { cart } = useCart();
+
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+
+  const [erro, setErro] = useState("");
+  const [pedidoCriado, setPedidoCriado] = useState<Order | null>(null);
 
   const total = cart.reduce(
     (sum, product) => sum + product.preco,
     0
   );
 
-  if (cart.length === 0) {
+  function finalizarPedido() {
+    setErro("");
+
+    if (!nome.trim()) {
+      setErro("Informe seu nome completo.");
+      return;
+    }
+
+    if (!email.trim()) {
+      setErro("Informe seu e-mail.");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      setErro("Informe um e-mail válido.");
+      return;
+    }
+
+    if (!whatsapp.trim()) {
+      setErro("Informe seu WhatsApp.");
+      return;
+    }
+
+    const numeroPedido = `SIAC-${Date.now()}`;
+
+    const novoPedido: Order = {
+      id: numeroPedido,
+      data: new Date().toISOString(),
+      cliente: {
+        nome: nome.trim(),
+        email: email.trim(),
+        whatsapp: whatsapp.trim(),
+      },
+      produtos: cart,
+      total,
+      status: "aguardando_pagamento",
+    };
+
+    createOrder(novoPedido);
+
+localStorage.setItem(
+  "siac-ultimo-pedido",
+  JSON.stringify(novoPedido)
+);
+
+    setPedidoCriado(novoPedido);
+  }
+
+  if (cart.length === 0 && !pedidoCriado) {
     return (
       <main className="min-h-screen bg-black text-white">
 
@@ -47,6 +105,93 @@ export default function CheckoutPage() {
           >
             Voltar para a loja
           </Link>
+
+        </section>
+
+      </main>
+    );
+  }
+
+  if (pedidoCriado) {
+    return (
+      <main className="min-h-screen bg-black text-white">
+
+        <header className="border-b border-gray-800 bg-black">
+          <div className="mx-auto max-w-7xl px-6 py-5">
+            <Link
+              href="/"
+              className="text-2xl font-bold"
+            >
+              SIAC <span className="text-blue-500">STUDIO</span>
+            </Link>
+          </div>
+        </header>
+
+        <section className="mx-auto max-w-2xl px-6 py-20">
+
+          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-8 text-center md:p-12">
+
+            <div className="text-6xl">
+              ✓
+            </div>
+
+            <p className="mt-6 text-sm font-semibold uppercase tracking-[0.2em] text-blue-500">
+              Pedido criado
+            </p>
+
+            <h1 className="mt-3 text-3xl font-bold md:text-4xl">
+              Tudo certo, {pedidoCriado.cliente.nome}!
+            </h1>
+
+            <p className="mt-4 text-gray-400">
+              Seu pedido foi registrado com sucesso.
+            </p>
+
+            <div className="mt-8 rounded-xl border border-gray-800 bg-black p-5">
+
+              <p className="text-sm text-gray-500">
+                Número do pedido
+              </p>
+
+              <p className="mt-2 text-xl font-bold text-blue-500">
+                {pedidoCriado.id}
+              </p>
+
+            </div>
+
+            <div className="mt-6 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5">
+
+              <p className="font-semibold text-yellow-400">
+                Pagamento pendente
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-gray-400">
+                O pedido está aguardando o pagamento.
+                Nesta etapa do projeto, o sistema ainda não
+                está conectado ao gateway de pagamento.
+              </p>
+
+            </div>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+
+              <Link
+                href="/"
+                className="rounded-lg bg-blue-600 px-6 py-3 font-semibold transition hover:bg-blue-500"
+              >
+                Voltar para a loja
+              </Link>
+
+              <Link
+                href="/carrinho"
+                className="rounded-lg border border-gray-700 px-6 py-3 font-semibold transition hover:border-blue-500 hover:text-blue-400"
+              >
+                Ver carrinho
+              </Link>
+
+            </div>
+
+          </div>
 
         </section>
 
@@ -92,7 +237,7 @@ export default function CheckoutPage() {
           </h1>
 
           <p className="mt-3 text-gray-400">
-            Preencha seus dados para continuar com o pedido.
+            Preencha seus dados para criar seu pedido.
           </p>
 
         </div>
@@ -108,7 +253,7 @@ export default function CheckoutPage() {
 
             <p className="mt-2 text-sm text-gray-500">
               Essas informações serão usadas para identificar
-              seu pedido e liberar o acesso aos arquivos.
+              seu pedido e liberar posteriormente o acesso aos arquivos.
             </p>
 
             <div className="mt-8 space-y-5">
@@ -124,6 +269,8 @@ export default function CheckoutPage() {
                 <input
                   id="nome"
                   type="text"
+                  value={nome}
+                  onChange={(event) => setNome(event.target.value)}
                   placeholder="Digite seu nome"
                   className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none transition placeholder:text-gray-600 focus:border-blue-500"
                 />
@@ -140,6 +287,8 @@ export default function CheckoutPage() {
                 <input
                   id="email"
                   type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="seuemail@exemplo.com"
                   className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none transition placeholder:text-gray-600 focus:border-blue-500"
                 />
@@ -156,12 +305,24 @@ export default function CheckoutPage() {
                 <input
                   id="whatsapp"
                   type="tel"
+                  value={whatsapp}
+                  onChange={(event) => setWhatsapp(event.target.value)}
                   placeholder="(00) 00000-0000"
                   className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none transition placeholder:text-gray-600 focus:border-blue-500"
                 />
               </div>
 
             </div>
+
+            {erro && (
+              <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+
+                <p className="text-sm font-semibold text-red-400">
+                  {erro}
+                </p>
+
+              </div>
+            )}
 
             <div className="mt-8 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
 
@@ -208,7 +369,7 @@ export default function CheckoutPage() {
                     </p>
 
                     <p className="mt-1 text-sm text-gray-500">
-                      {product.formato}
+                      Arquivo digital
                     </p>
 
                   </div>
@@ -241,9 +402,10 @@ export default function CheckoutPage() {
 
             <button
               type="button"
+              onClick={finalizarPedido}
               className="mt-8 w-full rounded-lg bg-blue-600 px-6 py-4 font-semibold transition hover:bg-blue-500"
             >
-              Continuar para pagamento
+              Criar pedido
             </button>
 
             <p className="mt-4 text-center text-xs leading-5 text-gray-500">
@@ -259,4 +421,3 @@ export default function CheckoutPage() {
     </main>
   );
 }
-
