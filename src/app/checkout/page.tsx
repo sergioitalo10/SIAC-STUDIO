@@ -21,53 +21,105 @@ export default function CheckoutPage() {
     0
   );
 
-  function finalizarPedido() {
-    setErro("");
+async function finalizarPedido() {
+  setErro("");
 
-    if (!nome.trim()) {
-      setErro("Informe seu nome completo.");
-      return;
-    }
+  if (!nome.trim()) {
+    setErro("Informe seu nome completo.");
+    return;
+  }
 
-    if (!email.trim()) {
-      setErro("Informe seu e-mail.");
-      return;
-    }
+  if (!email.trim()) {
+    setErro("Informe seu e-mail.");
+    return;
+  }
 
-    if (!email.includes("@")) {
-      setErro("Informe um e-mail válido.");
-      return;
-    }
+  if (!email.includes("@")) {
+    setErro("Informe um e-mail válido.");
+    return;
+  }
 
-    if (!whatsapp.trim()) {
-      setErro("Informe seu WhatsApp.");
-      return;
-    }
+  if (!whatsapp.trim()) {
+    setErro("Informe seu WhatsApp.");
+    return;
+  }
 
-    const numeroPedido = `SIAC-${Date.now()}`;
+  if (cart.length === 0) {
+    setErro("Seu carrinho está vazio.");
+    return;
+  }
 
-    const novoPedido: Order = {
-      id: numeroPedido,
-      data: new Date().toISOString(),
-      cliente: {
-        nome: nome.trim(),
-        email: email.trim(),
-        whatsapp: whatsapp.trim(),
-      },
-      produtos: cart,
-      total,
-      status: "aguardando_pagamento",
-    };
+  const numeroPedido = `SIAC-${Date.now()}`;
 
+  const novoPedido: Order = {
+    id: numeroPedido,
+    data: new Date().toISOString(),
+    cliente: {
+      nome: nome.trim(),
+      email: email.trim(),
+      whatsapp: whatsapp.trim(),
+    },
+    produtos: cart,
+    total,
+    status: "aguardando_pagamento",
+  };
+
+  try {
+    // Salva o pedido localmente
     createOrder(novoPedido);
 
-localStorage.setItem(
-  "siac-ultimo-pedido",
-  JSON.stringify(novoPedido)
-);
+    localStorage.setItem(
+      "siac-ultimo-pedido",
+      JSON.stringify(novoPedido)
+    );
 
-    setPedidoCriado(novoPedido);
+    // Cria a preferência de pagamento no Mercado Pago
+    const response = await fetch(
+      "/api/mercadopago/preference",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pedido: novoPedido,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error ||
+          "Não foi possível iniciar o pagamento."
+      );
+    }
+
+    const urlPagamento =
+      data.sandbox_init_point || data.init_point;
+
+    if (!urlPagamento) {
+      throw new Error(
+        "O Mercado Pago não retornou o endereço de pagamento."
+      );
+    }
+
+    // Redireciona para o Mercado Pago
+    window.location.href = urlPagamento;
+  } catch (error) {
+    console.error(
+      "Erro ao iniciar pagamento:",
+      error
+    );
+
+    setErro(
+      error instanceof Error
+        ? error.message
+        : "Não foi possível iniciar o pagamento."
+    );
   }
+}
 
   if (cart.length === 0 && !pedidoCriado) {
     return (
