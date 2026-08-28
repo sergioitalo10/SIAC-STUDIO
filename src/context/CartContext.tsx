@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   createContext,
@@ -22,26 +22,20 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = "siac-studio-cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Product[]>(() => {
-    // Recupera o carrinho diretamente ao iniciar
-    if (typeof window === "undefined") {
-      return [];
-    }
+  const [cart, setCart] = useState<Product[]>([]);
 
+  useEffect(() => {
     try {
       const savedCart = localStorage.getItem(CART_STORAGE_KEY);
 
       if (savedCart) {
-        return JSON.parse(savedCart);
+        setCart(JSON.parse(savedCart));
       }
     } catch (error) {
       console.error("Erro ao carregar carrinho:", error);
     }
+  }, []);
 
-    return [];
-  });
-
-  // Salva o carrinho sempre que ele mudar
   useEffect(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
@@ -56,7 +50,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         (item) => item.id === product.id
       );
 
-      // Não permite adicionar o mesmo produto duas vezes
       if (existingProduct) {
         return currentCart;
       }
