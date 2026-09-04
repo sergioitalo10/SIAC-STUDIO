@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Order } from "@/types/order";
-
-const orders = new Map<string, Order>();
+import { saveOrder, getOrders } from "@/lib/ordersStore";
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    orders.set(order.id, order);
+    saveOrder(order);
 
     console.log("PEDIDO RECEBIDO PELO SERVIDOR:");
     console.log(JSON.stringify(order, null, 2));
@@ -38,6 +37,6 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return NextResponse.json({
-    orders: Array.from(orders.values()),
+    orders: getOrders(),
   });
 }

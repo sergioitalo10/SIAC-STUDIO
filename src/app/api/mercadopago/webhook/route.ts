@@ -1,5 +1,9 @@
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { NextResponse } from "next/server";
+import {
+  getOrder,
+  updateOrderStatus,
+} from "@/lib/ordersStore";
 
 const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
@@ -12,12 +16,11 @@ export async function POST(request: Request) {
     console.log("=================================");
     console.log(JSON.stringify(body, null, 2));
 
-    const paymentId =
-      body?.data?.id;
+    const paymentId = body?.data?.id;
 
     if (!paymentId) {
       console.log("Webhook sem payment ID.");
-      
+
       return NextResponse.json(
         { received: true },
         { status: 200 }
@@ -51,6 +54,7 @@ export async function POST(request: Request) {
     console.log("=================================");
     console.log("PAGAMENTO CONSULTADO");
     console.log("=================================");
+
     console.log(
       JSON.stringify(
         {
@@ -67,6 +71,88 @@ export async function POST(request: Request) {
       )
     );
 
+    const pedidoId = response.external_reference;
+
+    if (!pedidoId) {
+      console.log(
+        "Pagamento sem external_reference."
+      );
+
+      return NextResponse.json(
+        { received: true },
+        { status: 200 }
+      );
+    }
+
+    const pedido = getOrder(String(pedidoId));
+
+    if (!pedido) {
+      console.log(
+        `Pedido não encontrado no servidor: ${pedidoId}`
+      );
+
+      return NextResponse.json(
+        {
+          received: true,
+          warning: "Pedido não encontrado.",
+        },
+        { status: 200 }
+      );
+    }
+
+    console.log("PEDIDO ENCONTRADO:");
+    console.log(
+      JSON.stringify(pedido, null, 2)
+    );
+
+    if (response.status === "approved") {
+      const pedidoAtualizado =
+        updateOrderStatus(
+          String(pedidoId),
+          "pagamento_aprovado"
+        );
+
+      console.log(
+        "================================="
+      );
+      console.log(
+        "PAGAMENTO APROVADO - PEDIDO ATUALIZADO"
+      );
+      console.log(
+        "================================="
+      );
+
+      console.log(
+        JSON.stringify(
+          pedidoAtualizado,
+          null,
+          2
+        )
+      );
+    }
+
+    if (response.status === "rejected") {
+      updateOrderStatus(
+        String(pedidoId),
+        "pagamento_recusado"
+      );
+
+      console.log(
+        `Pagamento recusado para o pedido ${pedidoId}`
+      );
+    }
+
+    if (response.status === "cancelled") {
+      updateOrderStatus(
+        String(pedidoId),
+        "cancelado"
+      );
+
+      console.log(
+        `Pagamento cancelado para o pedido ${pedidoId}`
+      );
+    }
+
     return NextResponse.json(
       { received: true },
       { status: 200 }
@@ -78,7 +164,9 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json(
-      { error: "Erro ao processar webhook." },
+      {
+        error: "Erro ao processar webhook.",
+      },
       { status: 500 }
     );
   }

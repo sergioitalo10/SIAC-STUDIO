@@ -49,6 +49,9 @@ export async function POST(request: Request) {
 
         external_reference: pedido.id,
 
+        notification_url:
+        "https://invention-arms-modify-tales.trycloudflare.com/api/mercadopago/webhook",
+
         back_urls: {
           success: "http://localhost:3000/pagamento/sucesso",
           failure: "http://localhost:3000/pagamento/falha",

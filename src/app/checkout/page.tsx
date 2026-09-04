@@ -65,54 +65,82 @@ export default function CheckoutPage() {
   };
 
   try {
-    createOrder(novoPedido);
+  createOrder(novoPedido);
 
-    localStorage.setItem(
-      "siac-ultimo-pedido",
-      JSON.stringify(novoPedido)
-    );
+  localStorage.setItem(
+    "siac-ultimo-pedido",
+    JSON.stringify(novoPedido)
+  );
 
-    const response = await fetch(
-      "/api/mercadopago/preference",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          pedido: novoPedido,
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data?.error || "N├úo foi poss├¡vel iniciar o pagamento."
-      );
+  // Salva o pedido também no servidor
+  const orderResponse = await fetch(
+    "/api/orders",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(novoPedido),
     }
+  );
 
-    const urlPagamento =
-      data.sandbox_init_point || data.init_point;
+  const orderData = await orderResponse.json();
 
-    if (!urlPagamento) {
-      throw new Error(
-        "O Mercado Pago n├úo retornou o endere├ºo de pagamento."
-      );
-    }
-
-    window.location.href = urlPagamento;
-  } catch (error) {
-    console.error("Erro ao iniciar pagamento:", error);
-
-    setErro(
-      error instanceof Error
-        ? error.message
-        : "N├úo foi poss├¡vel iniciar o pagamento."
+  if (!orderResponse.ok) {
+    throw new Error(
+      orderData?.error ||
+        "Não foi possível salvar o pedido."
     );
   }
+
+  console.log(
+    "PEDIDO SALVO NO SERVIDOR:",
+    orderData.order
+  );
+
+  // Agora cria o pagamento
+  const response = await fetch(
+    "/api/mercadopago/preference",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pedido: novoPedido,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error ||
+        "Não foi possível iniciar o pagamento."
+    );
+  }
+
+  const urlPagamento = data.init_point;
+
+  if (!urlPagamento) {
+    throw new Error(
+      "O Mercado Pago não retornou o endereço de pagamento."
+    );
+  }
+
+  window.location.href = urlPagamento;
+
+} catch (error) {
+  console.error("Erro ao iniciar pagamento:", error);
+
+  setErro(
+    error instanceof Error
+      ? error.message
+      : "Não foi possível iniciar o pagamento."
+  );
 }
+  }
 
   if (cart.length === 0 && !pedidoCriado) {
     return (
