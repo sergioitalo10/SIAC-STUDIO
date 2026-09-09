@@ -239,9 +239,9 @@ export default function CheckoutPage() {
               </p>
 
               <p className="mt-2 text-sm leading-6 text-gray-400">
-                O pedido est├í aguardando o pagamento.
-                Nesta etapa do projeto, o sistema ainda n├úo
-                est├í conectado ao gateway de pagamento.
+                O pedido está aguardando o pagamento.
+                Nesta etapa do projeto, o sistema ainda não
+                está conectado ao gateway de pagamento.
               </p>
 
             </div>
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-black text-white">
 
-      {/* CABE├çALHO */}
+      {/* CABEÇALHO */}
       <header className="border-b border-gray-800 bg-black">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
 

@@ -35,7 +35,26 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const pedidoId = searchParams.get("pedido");
+
+  if (pedidoId) {
+    const orders = getOrders();
+    const order = orders.find((item) => item.id === pedidoId);
+
+    if (!order) {
+      return NextResponse.json(
+        { error: "Pedido não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      order,
+    });
+  }
+
   return NextResponse.json({
     orders: getOrders(),
   });

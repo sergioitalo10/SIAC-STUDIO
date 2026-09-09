@@ -7,9 +7,7 @@ export async function POST(request: Request) {
   try {
     if (!accessToken) {
       return NextResponse.json(
-        {
-          error: "MERCADOPAGO_ACCESS_TOKEN não configurado.",
-        },
+        { error: "MERCADOPAGO_ACCESS_TOKEN não configurado." },
         { status: 500 }
       );
     }
@@ -19,9 +17,7 @@ export async function POST(request: Request) {
 
     if (!pedido) {
       return NextResponse.json(
-        {
-          error: "Dados do pedido não informados.",
-        },
+        { error: "Dados do pedido não informados." },
         { status: 400 }
       );
     }
@@ -50,12 +46,16 @@ export async function POST(request: Request) {
         external_reference: pedido.id,
 
         notification_url:
-        "https://invention-arms-modify-tales.trycloudflare.com/api/mercadopago/webhook",
+          "https://omaha-nicholas-goat-ronald.trycloudflare.com/api/mercadopago/webhook",
 
         back_urls: {
-          success: "http://localhost:3000/pagamento/sucesso",
-          failure: "http://localhost:3000/pagamento/falha",
-          pending: "http://localhost:3000/pagamento/pendente",
+          success: `https://omaha-nicholas-goat-ronald.trycloudflare.com/pagamento/sucesso?pedido=${encodeURIComponent(
+            pedido.id
+          )}`,
+          failure:
+            "https://omaha-nicholas-goat-ronald.trycloudflare.com/pagamento/falha",
+          pending:
+            "https://omaha-nicholas-goat-ronald.trycloudflare.com/pagamento/pendente",
         },
       },
     });
@@ -74,9 +74,7 @@ export async function POST(request: Request) {
     console.error("ERRO MERCADO PAGO:", error);
 
     return NextResponse.json(
-      {
-        error: "Não foi possível criar o pagamento.",
-      },
+      { error: "Não foi possível criar o pagamento." },
       { status: 500 }
     );
   }

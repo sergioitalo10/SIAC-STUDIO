@@ -7,7 +7,6 @@
   descricao: string;
   destaque?: boolean;
   tags?: string[];
-
   tipoProduto: "digital";
   formato: string;
   arquivo: string;
@@ -17,48 +16,48 @@
 export const products: Product[] = [
   {
     id: 1,
-    nome: "Arte Modelo Premium",
-    categoria: "Sublimação Total",
-    preco: 14.90,
-    imagem: "/produtos/produto-teste.png",
+    nome: "Onça Bege",
+    categoria: "Interclasses",
+    preco: 19.90,
+    imagem: "/produtos/Onça Bege.png",
     descricao:
       "Arte digital profissional para sublimação total, pronta para personalização.",
     destaque: true,
-    tags: ["premium", "sublimação", "camisa"],
+    tags: ["onça", "interclasses", "esporte", "camisa"],
     tipoProduto: "digital",
-    formato: "ZIP",
-    arquivo: "arte-modelo-premium.zip",
-    tamanho: "250 MB",
+    formato: "RAR",
+    arquivo: "ONCA-BEGE.rar",
+    tamanho: "20,3 MB",
   },
 
   {
     id: 2,
-    nome: "Arte Pesca Premium",
-    categoria: "Pesca",
-    preco: 14.90,
-    imagem: "/produtos/produto-teste.png",
+    nome: "Dragão Preto e Branco",
+    categoria: "Interclasses",
+    preco: 19.99,
+    imagem: "/produtos/Dragão 1.png",
     descricao:
-      "Modelo de arte profissional para camisas de pesca e personalização esportiva.",
+      "Arte digital profissional para sublimação total, pronta para personalização.",
     destaque: true,
-    tags: ["pesca", "esporte", "camisa"],
+    tags: ["dragão", "interclasses", "esporte", "camisa"],
     tipoProduto: "digital",
-    formato: "ZIP",
-    arquivo: "arte-pesca-premium.zip",
+    formato: "RAR",
+    arquivo: "arte-modelo-premium.zip",
     tamanho: "280 MB",
   },
 
   {
     id: 3,
-    nome: "Arte Futebol Premium",
-    categoria: "Futebol",
-    preco: 12.90,
-    imagem: "/produtos/produto-teste.png",
+    nome: "Leão Tribal Vermelho",
+    categoria: "Interclasses",
+    preco: 19.99,
+    imagem: "/produtos/Leão Tribal Vermehlo.png",
     descricao:
-      "Modelo de arte esportiva para camisas de futebol e personalização.",
+      "Arte digital profissional para sublimação total, pronta para personalização.",
     destaque: true,
-    tags: ["futebol", "esporte", "camisa"],
+    tags: ["leão", "interclasses", "esporte", "camisa"],
     tipoProduto: "digital",
-    formato: "ZIP",
+    formato: "RAR",
     arquivo: "arte-futebol-premium.zip",
     tamanho: "220 MB",
   },
