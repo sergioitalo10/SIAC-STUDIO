@@ -1,101 +1,95 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
+import { neon } from "@neondatabase/serverless";
+import fs from "fs";
 import path from "path";
-import { getOrder } from "@/lib/ordersStore";
 
-type RouteContext = {
+interface RouteParams {
   params: Promise<{
     pedidoId: string;
     produtoId: string;
   }>;
-};
+}
 
-export async function GET(
-  request: Request,
-  context: RouteContext
-) {
+export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { pedidoId, produtoId } = await context.params;
+    const { pedidoId, produtoId } = await params;
 
-    // 1. Busca o pedido
-    const pedido = getOrder(pedidoId);
+    if (!pedidoId || !produtoId) {
+      return NextResponse.json(
+        { error: "Parâmetros de pedido ou produto ausentes." },
+        { status: 400 }
+      );
+    }
 
-    if (!pedido) {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      return NextResponse.json(
+        { error: "DATABASE_URL não configurada no servidor." },
+        { status: 500 }
+      );
+    }
+
+    const sql = neon(dbUrl);
+
+    // 1. Busca o pedido no Neon para checar a aprovação do pagamento
+    const pedidos: any = await sql`
+      SELECT id, status 
+      FROM pedidos 
+      WHERE id = ${Number(pedidoId)}
+    `;
+
+    if (!pedidos || pedidos.length === 0) {
       return NextResponse.json(
         { error: "Pedido não encontrado." },
         { status: 404 }
       );
     }
 
-    // 2. Verifica se o pagamento foi aprovado
-    if (pedido.status !== "pagamento_aprovado") {
+    const statusAtual = pedidos[0].status;
+
+    // 2. Trava de Segurança: Permite se for 'pagamento_aprovado' ou 'approved'
+    if (statusAtual !== "pagamento_aprovado" && statusAtual !== "approved") {
       return NextResponse.json(
-        {
-          error:
-            "Download indisponível. O pagamento ainda não foi aprovado.",
-        },
+        { error: `Download não liberado. Status atual do pagamento: ${statusAtual}` },
         { status: 403 }
       );
     }
 
-    // 3. Procura o produto dentro do pedido
-    const produto = pedido.produtos.find(
-      (item) => String(item.id) === String(produtoId)
-    );
+    // 3. Nome do arquivo RAR associado ao pedido
+    const arquivoNome = `arte-pedido-${pedidoId}.rar`;
 
-    if (!produto) {
-      return NextResponse.json(
-        { error: "Produto não pertence a este pedido." },
-        { status: 403 }
-      );
+    // Caminho na pasta /downloads dentro do projeto
+    const filePath = path.join(process.cwd(), "downloads", arquivoNome);
+
+    // Se o arquivo específico não existir, tenta um arquivo RAR genérico para testes
+    let finalPath = filePath;
+    if (!fs.existsSync(filePath)) {
+      const fallbackPath = path.join(process.cwd(), "downloads", "produto-exemplo.rar");
+      if (fs.existsSync(fallbackPath)) {
+        finalPath = fallbackPath;
+      } else {
+        return NextResponse.json(
+          { error: `Arquivo físico (${arquivoNome} ou produto-exemplo.rar) não encontrado na pasta /downloads.` },
+          { status: 404 }
+        );
+      }
     }
 
-    // 4. Nome do arquivo definido no cadastro do produto
-    const caminhoRelativo = produto.arquivo
-  .replace(/^[/\\]+/, "")
-  .replace(/\//g, path.sep);
+    // Lê o buffer do arquivo RAR
+    const fileBuffer = fs.readFileSync(finalPath);
 
-const nomeArquivo = path.basename(caminhoRelativo);
-
-const caminhoArquivo = path.join(
-  process.cwd(),
-  "arquivos",
-  caminhoRelativo
-);
-
-    // 6. Verifica se o arquivo realmente existe
-    try {
-      await fs.access(caminhoArquivo);
-    } catch {
-      console.error(
-        "ARQUIVO NÃO ENCONTRADO:",
-        caminhoArquivo
-      );
-
-      return NextResponse.json(
-        { error: "Arquivo do produto não encontrado." },
-        { status: 404 }
-      );
-    }
-
-    // 7. Lê o arquivo
-    const arquivo = await fs.readFile(caminhoArquivo);
-
-    // 8. Entrega o arquivo para download
-    return new NextResponse(arquivo, {
+    // 4. Retorna o arquivo com os headers configurados para download de RAR
+    return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
-        "Content-Type": "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${nomeArquivo}"`,
-        "Content-Length": arquivo.length.toString(),
-        "Cache-Control": "private, no-store",
+        "Content-Disposition": `attachment; filename="${arquivoNome}"`,
+        "Content-Type": "application/x-rar-compressed",
       },
     });
-  } catch (error) {
-    console.error("ERRO NO DOWNLOAD:", error);
-
+  } catch (error: any) {
+    console.error("Erro na rota de download:", error);
     return NextResponse.json(
-      { error: "Não foi possível realizar o download." },
+      { error: "Erro interno ao processar o download." },
       { status: 500 }
     );
   }

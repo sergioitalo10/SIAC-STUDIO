@@ -1,173 +1,79 @@
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { NextResponse } from "next/server";
-import {
-  getOrder,
-  updateOrderStatus,
-} from "@/lib/ordersStore";
-
-const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+import { neon } from "@neondatabase/serverless";
 
 export async function POST(request: Request) {
+  console.log("--> WEBHOOK MERCADO PAGO FOI CHAMADO");
+
   try {
-    const body = await request.json();
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    const dbUrl = process.env.DATABASE_URL;
 
-    console.log("=================================");
-    console.log("WEBHOOK MERCADO PAGO RECEBIDO");
-    console.log("=================================");
-    console.log(JSON.stringify(body, null, 2));
-
-    const paymentId = body?.data?.id;
-
-    if (!paymentId) {
-      console.log("Webhook sem payment ID.");
-
+    if (!accessToken || !dbUrl) {
+      console.error("ERRO: Variáveis de ambiente faltando.");
       return NextResponse.json(
-        { received: true },
-        { status: 200 }
-      );
-    }
-
-    if (!accessToken) {
-      console.error(
-        "MERCADOPAGO_ACCESS_TOKEN não configurado."
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "MERCADOPAGO_ACCESS_TOKEN não configurado.",
-        },
+        { error: "Configuração do servidor incompleta." },
         { status: 500 }
       );
     }
 
-    const client = new MercadoPagoConfig({
-      accessToken,
-    });
+    const { searchParams } = new URL(request.url);
+    const body = await request.json().catch(() => ({}));
 
-    const payment = new Payment(client);
+    // O Mercado Pago envia o ID do pagamento via Query String (?data.id=... ou ?id=...) ou no Body
+    const topic = searchParams.get("topic") || searchParams.get("type") || body.type;
+    const paymentId = searchParams.get("data.id") || searchParams.get("id") || body.data?.id;
 
-    const response = await payment.get({
-      id: String(paymentId),
-    });
+    console.log(`--> WEBHOOK RECEBIDO | TÓPICO: ${topic} | ID PAGAMENTO: ${paymentId}`);
 
+    // Só processamos notificações relativas a pagamentos
+    if (topic === "payment" || body.action === "payment.created" || body.action === "payment.updated" || paymentId) {
+      if (!paymentId) {
+        console.log("--> Notificação recebida sem ID de pagamento. Ignorando.");
+        return NextResponse.json({ received: true });
+      }
+
+      console.log(`--> CONSULTANDO STATUS DO PAGAMENTO ${paymentId} NO MERCADO PAGO...`);
+      const client = new MercadoPagoConfig({ accessToken });
+      const payment = new Payment(client);
+
+      // Busca os detalhes oficiais do pagamento na API do Mercado Pago
+      const paymentData = await payment.get({ id: paymentId });
+      
+      const rawStatus = paymentData.status;
+      const novoPedidoId = paymentData.external_reference;
+
+      // Mapeia os status do Mercado Pago para a convenção esperada pela tela do React
+      let statusFormatado = rawStatus;
+      if (rawStatus === "approved") {
+        statusFormatado = "pagamento_aprovado";
+      } else if (rawStatus === "rejected" || rawStatus === "cancelled") {
+        statusFormatado = "pagamento_recusado";
+      }
+
+      console.log(`--> DETALHES ENCONTRADOS | PEDIDO ID: ${novoPedidoId} | STATUS ORIGINAL: ${rawStatus} | STATUS MAPEADO: ${statusFormatado}`);
+
+      if (novoPedidoId) {
+        const sql = neon(dbUrl);
+
+        // Atualiza o status do pedido no banco de dados Neon
+        await sql`
+          UPDATE pedidos 
+          SET status = ${statusFormatado} 
+          WHERE id = ${Number(novoPedidoId)}
+        `;
+
+        console.log(`--> BANCO NEON ATUALIZADO: Pedido ${novoPedidoId} alterado para status '${statusFormatado}'`);
+      }
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error: any) {
     console.log("=================================");
-    console.log("PAGAMENTO CONSULTADO");
+    console.log("EXCEÇÃO CAPTURADA NO WEBHOOK:");
+    console.log(error?.message || error);
     console.log("=================================");
 
-    console.log(
-      JSON.stringify(
-        {
-          id: response.id,
-          status: response.status,
-          status_detail: response.status_detail,
-          external_reference:
-            response.external_reference,
-          transaction_amount:
-            response.transaction_amount,
-        },
-        null,
-        2
-      )
-    );
-
-    const pedidoId = response.external_reference;
-
-    if (!pedidoId) {
-      console.log(
-        "Pagamento sem external_reference."
-      );
-
-      return NextResponse.json(
-        { received: true },
-        { status: 200 }
-      );
-    }
-
-    const pedido = getOrder(String(pedidoId));
-
-    if (!pedido) {
-      console.log(
-        `Pedido não encontrado no servidor: ${pedidoId}`
-      );
-
-      return NextResponse.json(
-        {
-          received: true,
-          warning: "Pedido não encontrado.",
-        },
-        { status: 200 }
-      );
-    }
-
-    console.log("PEDIDO ENCONTRADO:");
-    console.log(
-      JSON.stringify(pedido, null, 2)
-    );
-
-    if (response.status === "approved") {
-      const pedidoAtualizado =
-        updateOrderStatus(
-          String(pedidoId),
-          "pagamento_aprovado"
-        );
-
-      console.log(
-        "================================="
-      );
-      console.log(
-        "PAGAMENTO APROVADO - PEDIDO ATUALIZADO"
-      );
-      console.log(
-        "================================="
-      );
-
-      console.log(
-        JSON.stringify(
-          pedidoAtualizado,
-          null,
-          2
-        )
-      );
-    }
-
-    if (response.status === "rejected") {
-      updateOrderStatus(
-        String(pedidoId),
-        "pagamento_recusado"
-      );
-
-      console.log(
-        `Pagamento recusado para o pedido ${pedidoId}`
-      );
-    }
-
-    if (response.status === "cancelled") {
-      updateOrderStatus(
-        String(pedidoId),
-        "cancelado"
-      );
-
-      console.log(
-        `Pagamento cancelado para o pedido ${pedidoId}`
-      );
-    }
-
-    return NextResponse.json(
-      { received: true },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error(
-      "ERRO NO WEBHOOK MERCADO PAGO:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        error: "Erro ao processar webhook.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ received: true, error: String(error) });
   }
 }
