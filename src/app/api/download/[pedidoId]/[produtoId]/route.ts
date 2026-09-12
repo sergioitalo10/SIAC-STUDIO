@@ -51,14 +51,17 @@ export async function GET(
     }
 
     // 4. Nome do arquivo definido no cadastro do produto
-    const nomeArquivo = path.basename(produto.arquivo);
+    const caminhoRelativo = produto.arquivo
+  .replace(/^[/\\]+/, "")
+  .replace(/\//g, path.sep);
 
-    // 5. Arquivos ficam FORA da pasta public
-    const caminhoArquivo = path.join(
-      process.cwd(),
-      "arquivos",
-      nomeArquivo
-    );
+const nomeArquivo = path.basename(caminhoRelativo);
+
+const caminhoArquivo = path.join(
+  process.cwd(),
+  "arquivos",
+  caminhoRelativo
+);
 
     // 6. Verifica se o arquivo realmente existe
     try {

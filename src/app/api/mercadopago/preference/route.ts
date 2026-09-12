@@ -46,16 +46,16 @@ export async function POST(request: Request) {
         external_reference: pedido.id,
 
         notification_url:
-          "https://omaha-nicholas-goat-ronald.trycloudflare.com/api/mercadopago/webhook",
+  "https://higher-fairly-fortune-ridge.trycloudflare.com/api/mercadopago/webhook",
 
         back_urls: {
-          success: `https://omaha-nicholas-goat-ronald.trycloudflare.com/pagamento/sucesso?pedido=${encodeURIComponent(
+          success: `https://higher-fairly-fortune-ridge.trycloudflare.com/pagamento/sucesso?pedido=${encodeURIComponent(
             pedido.id
           )}`,
           failure:
-            "https://omaha-nicholas-goat-ronald.trycloudflare.com/pagamento/falha",
+  "https://higher-fairly-fortune-ridge.trycloudflare.com/pagamento/falha",
           pending:
-            "https://omaha-nicholas-goat-ronald.trycloudflare.com/pagamento/pendente",
+  "https://higher-fairly-fortune-ridge.trycloudflare.com/pagamento/pendente",
         },
       },
     });

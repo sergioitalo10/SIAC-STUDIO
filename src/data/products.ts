@@ -2,6 +2,8 @@
   id: number;
   nome: string;
   categoria: string;
+  mascote?: string;
+  modelo?: string;
   preco: number;
   imagem: string;
   descricao: string;
@@ -18,15 +20,19 @@ export const products: Product[] = [
     id: 1,
     nome: "Onça Bege",
     categoria: "Interclasses",
+    mascote: "Onça",
+    modelo: "001-ONCA-BEGE",
     preco: 19.90,
-    imagem: "/produtos/Onça Bege.png",
+    imagem:
+      "/produtos/INTERCLASSES/ONÇA/001-ONCA-BEGE/preview.png",
     descricao:
       "Arte digital profissional para sublimação total, pronta para personalização.",
     destaque: true,
     tags: ["onça", "interclasses", "esporte", "camisa"],
     tipoProduto: "digital",
     formato: "RAR",
-    arquivo: "ONCA-BEGE.rar",
+    arquivo:
+      "INTERCLASSES/ONÇA/001-ONCA-BEGE/arquivo.rar",
     tamanho: "20,3 MB",
   },
 
