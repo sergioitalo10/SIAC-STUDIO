@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import CartButton from "@/components/CartButton";
 
 interface ItemPedido {
   id: number;
@@ -34,9 +35,13 @@ export default function MinhaContaPage() {
   useEffect(() => {
     const sessaoSalva = localStorage.getItem("cliente_sessao");
     if (sessaoSalva) {
-      const datos = JSON.parse(sessaoSalva);
-      setUsuario(datos);
-      carregarPedidos(datos.email);
+      try {
+        const datos = JSON.parse(sessaoSalva);
+        setUsuario(datos);
+        carregarPedidos(datos.email);
+      } catch (e) {
+        console.error("Erro ao ler sessão local:", e);
+      }
     }
   }, []);
 
@@ -94,138 +99,161 @@ export default function MinhaContaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-slate-100 flex flex-col justify-between font-sans">
-      {/* CABEÇALHO SIAC STUDIO */}
-      <header className="border-b border-blue-900/40 bg-zinc-950/90 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-black tracking-wider text-white flex items-center gap-2">
-            <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-extrabold text-xs shadow-lg shadow-blue-500/30">SIAC</span>
-            <span className="text-slate-200">STUDIO</span>
+    <main className="min-h-screen bg-black text-white flex flex-col justify-between">
+      {/* CABEÇALHO IDÊNTICO À HOME */}
+      <header className="border-b border-gray-800 bg-black sticky top-0 z-50 backdrop-blur-md bg-black/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <Link href="/" className="text-2xl font-bold">
+            SIAC <span className="text-blue-500">STUDIO</span>
           </Link>
 
-          <Link href="/" className="text-xs font-semibold text-slate-400 hover:text-blue-400 transition flex items-center gap-1">
-            ← Voltar para a Loja
-          </Link>
+          <nav className="hidden gap-8 md:flex">
+            <Link href="/" className="hover:text-blue-500 transition">
+              Loja
+            </Link>
+            <Link href="/#categorias" className="hover:text-blue-500 transition">
+              Categorias
+            </Link>
+            <Link href="/#produtos" className="hover:text-blue-500 transition">
+              Produtos
+            </Link>
+            <Link href="/#destaques" className="hover:text-blue-500 transition">
+              Promoções
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-4">
+            {usuario && (
+              <button
+                onClick={handleLogout}
+                className="text-sm font-semibold text-gray-400 hover:text-white transition px-2 py-1"
+              >
+                Sair
+              </button>
+            )}
+            <CartButton />
+          </div>
         </div>
       </header>
 
-      {/* CONTEÚDO PRINCIPAL */}
-      <main className="max-w-4xl mx-auto px-4 py-12 flex-1 w-full">
+      {/* BANNER PRINCIPAL DO PAINEL */}
+      <section className="relative overflow-hidden bg-gray-950 border-b border-gray-900">
+        <div className="mx-auto max-w-7xl px-6 py-12">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-blue-500">
+            SIAC STUDIO — ÁREA DO CLIENTE
+          </p>
+
+          <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
+            {usuario ? `Olá, ${usuario.nome}!` : "Acesse sua Conta"}
+          </h1>
+
+          <p className="mt-3 max-w-2xl text-base text-gray-400">
+            {usuario
+              ? `Gerencie e resgate o download ilimitado dos seus pacotes .RAR associados ao e-mail ${usuario.email}.`
+              : "Faça login ou cadastre-se para acessar suas artes e vetores adquiridos."}
+          </p>
+        </div>
+      </section>
+
+      {/* CONTEÚDO PRINCIPAL (DASHBOARD OU LOGIN) */}
+      <section className="mx-auto max-w-7xl px-6 py-12 flex-1 w-full">
         {usuario ? (
-          /* DASHBOARD DO CLIENTE LOGADO */
+          /* DASHBOARD LOGADO */
           <div className="space-y-8">
-            {/* Banner de Boas-Vindas */}
-            <div className="bg-gradient-to-r from-zinc-950 via-slate-900 to-zinc-950 border border-blue-900/50 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xl shadow-blue-950/20">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-4">
               <div>
-                <span className="inline-block px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-semibold rounded-full border border-blue-500/20 mb-2">
-                  Área Exclusiva do Cliente
-                </span>
-                <h1 className="text-2xl md:text-3xl font-bold text-white">Bem-vindo(a), {usuario.nome}!</h1>
-                <p className="text-sm text-slate-400 mt-1">{usuario.email}</p>
+                <p className="text-sm font-semibold uppercase tracking-wider text-blue-500">
+                  Meus Downloads
+                </p>
+                <h2 className="mt-1 text-2xl font-bold">Pacotes e Arquivos Liberados</h2>
               </div>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-slate-300 rounded-xl border border-zinc-700 transition"
-              >
-                Sair da Conta
-              </button>
+              <span className="text-sm text-gray-400">
+                {pedidos.length} {pedidos.length === 1 ? "pedido encontrado" : "pedidos encontrados"}
+              </span>
             </div>
 
-            {/* Lista de Pedidos & Downloads */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Meus Arquivos Digitais (.RAR)
-                </h2>
-                <span className="text-xs text-slate-400">{pedidos.length} pedido(s) liberado(s)</span>
+            {carregandoPedidos ? (
+              <div className="rounded-2xl border border-gray-800 bg-gray-950 px-6 py-16 text-center">
+                <div className="text-4xl animate-bounce">📦</div>
+                <h3 className="mt-4 text-xl font-bold">Carregando seus arquivos...</h3>
               </div>
-
-              {carregandoPedidos ? (
-                <div className="text-center py-12 bg-zinc-950 rounded-2xl border border-zinc-800">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
-                  <p className="text-sm text-slate-400">Buscando seus downloads no SIAC STUDIO...</p>
-                </div>
-              ) : pedidos.length === 0 ? (
-                <div className="text-center py-12 bg-zinc-950 rounded-2xl border border-dashed border-zinc-800 p-8">
-                  <div className="w-12 h-12 bg-blue-600/10 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-                    📦
-                  </div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Nenhum pedido liberado no momento</h3>
-                  <p className="text-sm text-slate-400 max-w-md mx-auto mb-6">
-                    Assim que o seu pagamento via PIX for aprovado, seus arquivos .RAR estarão salvos aqui para download ilimitado.
-                  </p>
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-blue-600/20"
+            ) : pedidos.length === 0 ? (
+              <div className="rounded-2xl border border-gray-800 bg-gray-950 px-6 py-16 text-center">
+                <div className="text-4xl">🔎</div>
+                <h3 className="mt-4 text-xl font-bold">Nenhum pedido liberado no momento</h3>
+                <p className="mt-2 text-gray-400 max-w-md mx-auto">
+                  Assim que o seu pagamento via PIX for aprovado, seus arquivos .RAR aparecerão aqui automaticamente.
+                </p>
+                <Link
+                  href="/#produtos"
+                  className="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-3 font-semibold transition hover:bg-blue-500"
+                >
+                  Explorar artes na loja
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {pedidos.map((pedido) => (
+                  <div
+                    key={pedido.id}
+                    className="rounded-2xl border border-gray-800 bg-gray-950 p-6 transition hover:border-gray-700"
                   >
-                    Explorar Projetos no Site
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {pedidos.map((pedido) => (
-                    <div
-                      key={pedido.id}
-                      className="bg-zinc-950 border border-zinc-800/80 rounded-2xl p-5 hover:border-blue-900/50 transition"
-                    >
-                      <div className="flex flex-wrap justify-between items-center pb-4 mb-4 border-b border-zinc-800 gap-2">
-                        <div>
-                          <span className="text-xs font-semibold text-slate-400">PEDIDO #{pedido.id}</span>
-                          <p className="text-xs text-slate-500">Pagamento confirmado via Mercado Pago</p>
-                        </div>
-                        <span className="px-3 py-1 text-xs font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                          Aprovado
+                    <div className="flex flex-wrap items-center justify-between pb-4 mb-4 border-b border-gray-800 gap-2">
+                      <div>
+                        <span className="text-xs font-semibold tracking-wider text-blue-500 uppercase">
+                          PEDIDO #{pedido.id}
                         </span>
+                        <p className="text-xs text-gray-400">Pagamento aprovado via Mercado Pago</p>
                       </div>
-
-                      <div className="space-y-3">
-                        {pedido.itens.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-black/80 p-4 rounded-xl border border-zinc-800/80 gap-4"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-bold text-xs border border-blue-500/20">
-                                RAR
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-white text-sm">{item.nome}</h4>
-                                <p className="text-xs text-slate-400">Arquivo Digital SIAC STUDIO</p>
-                              </div>
-                            </div>
-                            <a
-                              href={`/api/download/${pedido.id}/${item.id}`}
-                              download
-                              className="w-full sm:w-auto text-center px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-blue-600/20"
-                            >
-                              Baixar Arquivo (.RAR)
-                            </a>
-                          </div>
-                        ))}
-                      </div>
+                      <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-400 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                        Aprovado
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
+                    <div className="space-y-3">
+                      {pedido.itens.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-black/80 p-4 rounded-xl border border-gray-800 gap-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-bold text-xs border border-blue-500/20">
+                              RAR
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-white text-sm">{item.nome}</h4>
+                              <p className="text-xs text-gray-400">Arquivo Digital SIAC STUDIO</p>
+                            </div>
+                          </div>
+                          <a
+                            href={`/api/download/${pedido.id}/${item.id}`}
+                            download
+                            className="w-full sm:w-auto text-center px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-lg transition shadow-md shadow-blue-600/20"
+                          >
+                            Baixar Arquivo (.RAR)
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           /* FORMULÁRIO DE LOGIN / CADASTRO */
-          <div className="max-w-md mx-auto bg-zinc-950 border border-zinc-800 rounded-2xl p-8 shadow-2xl shadow-blue-950/20">
+          <div className="max-w-md mx-auto rounded-2xl border border-gray-800 bg-gray-950 p-8 shadow-2xl">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600/10 rounded-xl text-blue-400 mb-3 border border-blue-500/20">
-                🔐
-              </div>
-              <h1 className="text-2xl font-bold text-white">
-                {isLogin ? "Área do Cliente SIAC STUDIO" : "Criar sua Conta"}
-              </h1>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500 mb-1">
+                SIAC STUDIO
+              </p>
+              <h2 className="text-2xl font-bold text-white">
+                {isLogin ? "Entrar na sua conta" : "Criar nova conta"}
+              </h2>
+              <p className="text-xs text-gray-400 mt-2">
                 {isLogin
-                  ? "Acesse para recuperar seus downloads e arquivos .RAR"
+                  ? "Informe seus dados para acessar seus arquivos .RAR"
                   : "Cadastre-se para acompanhar seu histórico de compras"}
               </p>
             </div>
@@ -239,38 +267,38 @@ export default function MinhaContaPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nome Completo</label>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">Nome Completo</label>
                   <input
                     type="text"
                     required
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition"
-                    placeholder="Seu nome"
+                    className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-white text-sm outline-none transition placeholder:text-gray-500 focus:border-blue-500"
+                    placeholder="Seu nome completo"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">E-mail</label>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5">E-mail</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition"
+                  className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-white text-sm outline-none transition placeholder:text-gray-500 focus:border-blue-500"
                   placeholder="seu@email.com"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Senha</label>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Senha</label>
                 <input
                   type="password"
                   required
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition"
+                  className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-white text-sm outline-none transition placeholder:text-gray-500 focus:border-blue-500"
                   placeholder="••••••••"
                 />
               </div>
@@ -278,13 +306,13 @@ export default function MinhaContaPage() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow-lg shadow-blue-600/20 text-sm disabled:opacity-50 mt-2"
+                className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 mt-2 shadow-md shadow-blue-600/20"
               >
-                {carregando ? "Entrando..." : isLogin ? "Acessar Conta" : "Criar Minha Conta"}
+                {carregando ? "Acessando..." : isLogin ? "Entrar" : "Criar conta"}
               </button>
             </form>
 
-            <div className="mt-6 text-center border-t border-zinc-800 pt-5">
+            <div className="mt-6 text-center border-t border-gray-800 pt-5">
               <button
                 onClick={() => {
                   setIsLogin(!isLogin);
@@ -299,12 +327,12 @@ export default function MinhaContaPage() {
             </div>
           </div>
         )}
-      </main>
+      </section>
 
-      {/* RODAPÉ SIAC STUDIO */}
-      <footer className="border-t border-zinc-900 bg-black py-6 text-center text-xs text-slate-500">
+      {/* RODAPÉ DESTAQUES / IGUAL À HOME */}
+      <footer className="border-t border-gray-900 bg-gray-950 py-8 text-center text-xs text-gray-500">
         <p>© 2026 SIAC STUDIO — Todos os direitos reservados.</p>
       </footer>
-    </div>
+    </main>
   );
 }

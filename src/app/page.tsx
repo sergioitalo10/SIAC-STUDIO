@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import CartButton from "@/components/CartButton";
 import { products } from "@/data/products";
@@ -8,6 +9,19 @@ import { products } from "@/data/products";
 export default function Home() {
   const [busca, setBusca] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todas");
+  const [usuario, setUsuario] = useState<{ id: number; nome: string; email: string } | null>(null);
+
+  // Carrega a sessão do usuário caso esteja logado
+  useEffect(() => {
+    const sessaoSalva = localStorage.getItem("cliente_sessao");
+    if (sessaoSalva) {
+      try {
+        setUsuario(JSON.parse(sessaoSalva));
+      } catch (e) {
+        console.error("Erro ao carregar sessão:", e);
+      }
+    }
+  }, []);
 
   const categorias = useMemo(() => {
     return ["Todas", ...new Set(products.map((product) => product.categoria))];
@@ -41,36 +55,58 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
 
-      {/* CABEÇALHO */}
-      <header className="border-b border-gray-800 bg-black">
+      {/* CABEÇALHO INTEGRADO */}
+      <header className="border-b border-gray-800 bg-black sticky top-0 z-50 backdrop-blur-md bg-black/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
 
-          <div className="text-2xl font-bold">
+          <Link href="/" className="text-2xl font-bold">
             SIAC <span className="text-blue-500">STUDIO</span>
-          </div>
+          </Link>
 
           <nav className="hidden gap-8 md:flex">
-            <a href="#" className="hover:text-blue-500">
+            <a href="#" className="hover:text-blue-500 transition">
               Loja
             </a>
 
-            <a href="#categorias" className="hover:text-blue-500">
+            <a href="#categorias" className="hover:text-blue-500 transition">
               Categorias
             </a>
 
-            <a href="#produtos" className="hover:text-blue-500">
+            <a href="#produtos" className="hover:text-blue-500 transition">
               Produtos
             </a>
 
-            <a href="#destaques" className="hover:text-blue-500">
+            <a href="#destaques" className="hover:text-blue-500 transition">
               Promoções
             </a>
           </nav>
 
           <div className="flex items-center gap-4">
-            <span className="text-xl">
-              🔎
-            </span>
+            {/* ÁREA DE LOGIN / CLIENTE */}
+            {usuario ? (
+              <Link
+                href="/minha-conta"
+                className="flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-950/40 px-3.5 py-1.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:bg-blue-900/50"
+              >
+                <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
+                <span>Olá, {usuario.nome.split(" ")[0]}</span>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/minha-conta"
+                  className="text-sm font-semibold text-gray-300 hover:text-white transition px-2 py-1"
+                >
+                  Entrar
+                </Link>
+                <Link
+                  href="/minha-conta"
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/20"
+                >
+                  Criar conta
+                </Link>
+              </div>
+            )}
 
             <CartButton />
           </div>
