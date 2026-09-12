@@ -1,0 +1,37 @@
+model Produto {
+  id        Int     @id @default(autoincrement())
+  nome      String  @unique
+  preco     Float
+  imagem    String?
+  arquivo   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("produtos")
+}
+
+model Pedido {
+  id        Int     @id @default(autoincrement())
+  cliente   String
+  email     String
+  total     Float
+  status    String  @default("pendente")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items PedidoItem[]
+
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id        Int     @id @default(autoincrement())
+  pedidoId  Int
+  produtoId Int
+  quantidade Int
+  preco     Float
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  @@map("pedido_itens")
+}
