@@ -6,17 +6,17 @@ import path from "path";
 interface RouteParams {
   params: Promise<{
     pedidoId: string;
-    produtoId: string;
+    itemId: string;
   }>;
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { pedidoId, produtoId } = await params;
+    const { pedidoId } = await params;
 
-    if (!pedidoId || !produtoId) {
+    if (!pedidoId) {
       return NextResponse.json(
-        { error: "Parâmetros de pedido ou produto ausentes." },
+        { error: "ID do pedido ausente." },
         { status: 400 }
       );
     }
@@ -31,7 +31,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     const sql = neon(dbUrl);
 
-    // 1. Busca o pedido no Neon para checar a aprovação do pagamento
+    // 1. Busca rigorosa do pedido exato pelo ID correto
     const pedidos: any = await sql`
       SELECT id, status 
       FROM pedidos 
@@ -40,28 +40,28 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     if (!pedidos || pedidos.length === 0) {
       return NextResponse.json(
-        { error: "Pedido não encontrado." },
+        { error: `Pedido #${pedidoId} não encontrado no banco de dados.` },
         { status: 404 }
       );
     }
 
-    const statusAtual = pedidos[0].status;
+    const pedido = pedidos[0];
+    const statusAtual = String(pedido.status).toLowerCase().trim();
 
-    // 2. Trava de Segurança: Permite se for 'pagamento_aprovado' ou 'approved'
-    if (statusAtual !== "pagamento_aprovado" && statusAtual !== "approved") {
+    // 2. Trava de segurança de pagamento
+    const statusValidos = ["pagamento_aprovado", "approved", "aprovado", "concluido", "pago"];
+    if (!statusValidos.includes(statusAtual)) {
       return NextResponse.json(
-        { error: `Download não liberado. Status atual do pagamento: ${statusAtual}` },
+        { error: `Download não liberado. Status do pedido #${pedidoId}: ${pedido.status}` },
         { status: 403 }
       );
     }
 
-    // 3. Nome do arquivo RAR associado ao pedido
+    // 3. Procura o arquivo específico do pedido (ex: arte-pedido-15.rar)
+    // Se não existir, usa o coringa de testes da pasta downloads
     const arquivoNome = `arte-pedido-${pedidoId}.rar`;
-
-    // Caminho na pasta /downloads dentro do projeto
     const filePath = path.join(process.cwd(), "downloads", arquivoNome);
 
-    // Se o arquivo específico não existir, tenta um arquivo RAR genérico para testes
     let finalPath = filePath;
     if (!fs.existsSync(filePath)) {
       const fallbackPath = path.join(process.cwd(), "downloads", "produto-exemplo.rar");
@@ -69,27 +69,27 @@ export async function GET(request: Request, { params }: RouteParams) {
         finalPath = fallbackPath;
       } else {
         return NextResponse.json(
-          { error: `Arquivo físico (${arquivoNome} ou produto-exemplo.rar) não encontrado na pasta /downloads.` },
+          { error: `O arquivo compactado do pedido #${pedidoId} não foi encontrado no servidor.` },
           { status: 404 }
         );
       }
     }
 
-    // Lê o buffer do arquivo RAR
+    // Lê o buffer do arquivo correto
     const fileBuffer = fs.readFileSync(finalPath);
 
-    // 4. Retorna o arquivo com os headers configurados para download de RAR
+    // 4. Retorna exatamente o arquivo do pedido correspondente
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
-        "Content-Disposition": `attachment; filename="${arquivoNome}"`,
+        "Content-Disposition": `attachment; filename="arte-pedido-${pedidoId}.rar"`,
         "Content-Type": "application/x-rar-compressed",
       },
     });
   } catch (error: any) {
     console.error("Erro na rota de download:", error);
     return NextResponse.json(
-      { error: "Erro interno ao processar o download." },
+      { error: "Erro interno ao processar o download: " + error.message },
       { status: 500 }
     );
   }

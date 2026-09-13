@@ -106,6 +106,14 @@ export default function MinhaContaPage() {
         const datos = JSON.parse(sessaoSalva);
         setUsuario(datos);
         carregarPedidos(datos.email);
+
+        // Se o usuário voltou do checkout com status de sucesso, aguarda 1 segundo e recarrega os pedidos
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("status") === "sucesso" || params.get("status") === "approved") {
+          setTimeout(() => {
+            carregarPedidos(datos.email);
+          }, 1500);
+        }
       }
     } catch (e) {
       console.error("Erro ao ler sessão local:", e);
@@ -167,6 +175,41 @@ export default function MinhaContaPage() {
     setPedidos([]);
   };
 
+  // Função unificada para apagar item pendente do carrinho ou pedido do banco
+  const excluirItemOuPedido = async (pedidoId?: number) => {
+    if (!confirm(pedidoId ? `Deseja realmente apagar o pedido #${pedidoId}?` : "Deseja realmente remover este item do carrinho?")) {
+      return;
+    }
+
+    try {
+      // 1. Limpa o carrinho local do navegador
+      localStorage.removeItem("carrinho_pendente");
+      setProdutoCarrinho(null);
+
+      // 2. Se houver um ID de pedido real no banco, deleta ele via API
+      if (pedidoId) {
+        const res = await fetch(`/api/deletar-pedido?id=${pedidoId}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
+        } else {
+          alert("Erro ao excluir: " + data.error);
+        }
+      }
+
+      // Sincroniza a lista de pedidos se houver usuário logado
+      if (usuario) {
+        carregarPedidos(usuario.email);
+      }
+    } catch (err) {
+      console.error("Erro ao processar exclusão:", err);
+      alert("Erro ao comunicar com o servidor.");
+    }
+  };
+
   // Se estiver gerando a preferência do Mercado Pago, exibe estado de carregamento amigável
   if (redirecionandoCheckout) {
     return (
@@ -210,7 +253,7 @@ export default function MinhaContaPage() {
             {usuario && (
               <button
                 onClick={handleLogout}
-                className="text-sm font-semibold text-gray-400 hover:text-white transition px-2 py-1"
+                className="text-sm font-semibold text-gray-400 hover:text-white transition px-2 py-1 cursor-pointer"
               >
                 Sair
               </button>
@@ -274,27 +317,44 @@ export default function MinhaContaPage() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => gerarCheckoutMercadoPago(produtoCarrinho, usuario.email)}
-                    className="w-full md:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition cursor-pointer flex-shrink-0 text-center"
-                  >
-                    Pagar e Obter Arquivo (.RAR)
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <button
+                      onClick={() => gerarCheckoutMercadoPago(produtoCarrinho, usuario.email)}
+                      className="w-full md:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition cursor-pointer text-center"
+                    >
+                      Pagar e Obter Arquivo (.RAR)
+                    </button>
+
+                    <button
+                      onClick={() => excluirItemOuPedido()}
+                      className="w-full md:w-auto px-4 py-3 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/30 font-semibold text-sm rounded-xl transition cursor-pointer text-center"
+                    >
+                      Desistir / Remover
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* LISTA DE PEDIDOS APROVADOS */}
+            {/* LISTA DE PEDIDOS */}
             <div className="flex items-center justify-between border-b border-gray-800 pb-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-blue-500">
-                  Meus Downloads
+                  Meus Downloads & Pedidos
                 </p>
-                <h2 className="mt-1 text-2xl font-bold">Pacotes e Arquivos Liberados</h2>
+                <h2 className="mt-1 text-2xl font-bold">Histórico de Pedidos</h2>
               </div>
-              <span className="text-sm text-gray-400">
-                {pedidos.length} {pedidos.length === 1 ? "pedido encontrado" : "pedidos encontrados"}
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => carregarPedidos(usuario.email)}
+                  className="text-xs text-blue-400 hover:underline border border-blue-500/30 px-3 py-1.5 rounded-lg bg-blue-950/30 transition cursor-pointer"
+                >
+                  Atualizar Lista
+                </button>
+                <span className="text-sm text-gray-400">
+                  {pedidos.length} {pedidos.length === 1 ? "pedido encontrado" : "pedidos encontrados"}
+                </span>
+              </div>
             </div>
 
             {carregandoPedidos ? (
@@ -302,12 +362,12 @@ export default function MinhaContaPage() {
                 <div className="text-4xl animate-bounce">📦</div>
                 <h3 className="mt-4 text-xl font-bold">Carregando seus arquivos...</h3>
               </div>
-            ) : pedidos.length === 0 && !produtoCarrinho ? (
+            ) : pedidos.length === 0 ? (
               <div className="rounded-2xl border border-gray-800 bg-gray-950 px-6 py-16 text-center">
                 <div className="text-4xl">🔎</div>
-                <h3 className="mt-4 text-xl font-bold">Nenhum pedido liberado no momento</h3>
+                <h3 className="mt-4 text-xl font-bold">Nenhum pedido encontrado no momento</h3>
                 <p className="mt-2 text-gray-400 max-w-md mx-auto">
-                  Assim que o seu pagamento via PIX for aprovado, seus arquivos .RAR aparecerão aqui automaticamente.
+                  Assim que você gerar um pedido, ele aparecerá aqui para acompanhamento ou pagamento.
                 </p>
                 <Link
                   href="/#produtos"
@@ -318,51 +378,81 @@ export default function MinhaContaPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {pedidos.map((pedido) => (
-                  <div
-                    key={pedido.id}
-                    className="rounded-2xl border border-gray-800 bg-gray-950 p-6 transition hover:border-gray-700"
-                  >
-                    <div className="flex flex-wrap items-center justify-between pb-4 mb-4 border-b border-gray-800 gap-2">
-                      <div>
-                        <span className="text-xs font-semibold tracking-wider text-blue-500 uppercase">
-                          PEDIDO #{pedido.id}
-                        </span>
-                        <p className="text-xs text-gray-400">Pagamento aprovado via Mercado Pago</p>
-                      </div>
-                      <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-400 flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                        Aprovado
-                      </span>
-                    </div>
+                {pedidos.map((pedido) => {
+                  const isPendente = pedido.status.toLowerCase() === "pendente";
 
-                    <div className="space-y-3">
-                      {pedido.itens.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-black/80 p-4 rounded-xl border border-gray-800 gap-4"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-bold text-xs border border-blue-500/20">
-                              RAR
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-white text-sm">{item.nome}</h4>
-                              <p className="text-xs text-gray-400">Arquivo Digital SIAC STUDIO</p>
-                            </div>
-                          </div>
-                          <a
-                            href={`/api/download/${pedido.id}/${item.id}`}
-                            download
-                            className="w-full sm:w-auto text-center px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-lg transition shadow-md shadow-blue-600/20"
-                          >
-                            Baixar Arquivo (.RAR)
-                          </a>
+                  return (
+                    <div
+                      key={pedido.id}
+                      className="rounded-2xl border border-gray-800 bg-gray-950 p-6 transition hover:border-gray-700"
+                    >
+                      <div className="flex flex-wrap items-center justify-between pb-4 mb-4 border-b border-gray-800 gap-2">
+                        <div>
+                          <span className="text-xs font-semibold tracking-wider text-blue-500 uppercase">
+                            PEDIDO #{pedido.id}
+                          </span>
+                          <p className="text-xs text-gray-400">
+                            {isPendente ? "Aguardando confirmação de pagamento" : "Pagamento aprovado via Mercado Pago"}
+                          </p>
                         </div>
-                      ))}
+
+                        <div className="flex items-center gap-3">
+                          {/* Botão de apagar pedido pendente do banco */}
+                          {isPendente && (
+                            <button
+                              onClick={() => excluirItemOuPedido(pedido.id)}
+                              className="px-3 py-1.5 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/30 font-semibold text-xs rounded-lg transition cursor-pointer"
+                            >
+                              Apagar Pedido
+                            </button>
+                          )}
+
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5 border ${
+                            isPendente 
+                              ? "bg-amber-500/10 border-amber-500/30 text-amber-400" 
+                              : "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${isPendente ? "bg-amber-400" : "bg-blue-400"} animate-pulse`}></span>
+                            {pedido.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {pedido.itens.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-black/80 p-4 rounded-xl border border-gray-800 gap-4"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-bold text-xs border border-blue-500/20">
+                                RAR
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-white text-sm">{item.nome}</h4>
+                                <p className="text-xs text-gray-400">Arquivo Digital SIAC STUDIO</p>
+                              </div>
+                            </div>
+
+                            {!isPendente ? (
+                              <a
+                                href={`/api/download/${pedido.id}/${item.id}`}
+                                download
+                                className="w-full sm:w-auto text-center px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-lg transition shadow-md shadow-blue-600/20"
+                              >
+                                Baixar Arquivo (.RAR)
+                              </a>
+                            ) : (
+                              <span className="text-xs text-amber-400 font-medium">
+                                Disponível após aprovação do pagamento
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

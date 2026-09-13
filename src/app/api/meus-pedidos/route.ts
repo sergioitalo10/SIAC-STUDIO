@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { neon } from "@neondatabase/serverless";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
 export async function GET(request: Request) {
   try {
@@ -7,52 +12,42 @@ export async function GET(request: Request) {
     const email = searchParams.get("email");
 
     if (!email) {
-      return NextResponse.json(
-        { error: "E-mail do cliente não informado." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "E-mail não informado" }, { status: 400 });
     }
 
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      return NextResponse.json(
-        { error: "DATABASE_URL não configurada." },
-        { status: 500 }
-      );
-    }
-
-    const sql = neon(dbUrl);
-
-    // Busca todos os pedidos aprovados do e-mail do cliente
-    const pedidos: any = await sql`
+    const queryPedidos = `
       SELECT id, status, criado_em 
       FROM pedidos 
-      WHERE email = ${email.toLowerCase().trim()}
-        AND status IN ('pagamento_aprovado', 'approved')
-      ORDER BY id DESC
+      WHERE LOWER(email) = LOWER($1) AND (LOWER(status) = 'pago' OR LOWER(status) = 'approved')
+      ORDER BY id DESC;
     `;
+    const resultPedidos = await pool.query(queryPedidos, [email]);
 
-    // Para cada pedido, carrega os itens vinculados
-    const pedidosComItens = await Promise.all(
-      pedidos.map(async (pedido: any) => {
-        const itens: any = await sql`
-          SELECT produto_id as id, 'Arquivo Digital Customizado' as nome, 'arte.rar' as arquivo
-          FROM pedido_itens
-          WHERE pedido_id = ${pedido.id}
-        `;
-        return {
-          ...pedido,
-          itens: itens.length > 0 ? itens : [{ id: 1, nome: "Pacote de Artes RAR", arquivo: "arte.rar" }],
-        };
-      })
-    );
+    const pedidosFormatados = [];
 
-    return NextResponse.json({ ok: true, pedidos: pedidosComItens });
-  } catch (error: any) {
-    console.error("Erro ao buscar meus pedidos:", error);
-    return NextResponse.json(
-      { error: "Erro ao carregar histórico de compras." },
-      { status: 500 }
-    );
+    for (const pedido of resultPedidos.rows) {
+      const queryItens = `
+        SELECT id, produto_id, nome, preco 
+        FROM pedido_itens 
+        WHERE pedido_id = $1;
+      `;
+      const resultItens = await pool.query(queryItens, [pedido.id]);
+
+      pedidosFormatados.push({
+        id: pedido.id,
+        status: pedido.status,
+        criado_em: pedido.criado_em,
+        itens: resultItens.rows.map(item => ({
+          id: item.id,
+          nome: item.nome || `Pacote Digital #${item.produto_id}`,
+          arquivo: `pacote-${item.produto_id}.rar`
+        })),
+      });
+    }
+
+    return NextResponse.json({ ok: true, pedidos: pedidosFormatados });
+  } catch (err: any) {
+    console.error("Erro ao buscar pedidos do cliente:", err);
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

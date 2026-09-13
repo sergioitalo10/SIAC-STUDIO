@@ -5,7 +5,7 @@ import { neon } from "@neondatabase/serverless";
 export async function POST(request: Request) {
   console.log("--> ROTA PREFERENCE CHAMADA (SIAC STUDIO)");
 
-  // TESTE DIRETO: Cole o seu token real aqui temporariamente entre as aspas
+  // Token fixado diretamente para isolar qualquer problema de leitura do ambiente
   const accessToken = "APP_USR-7622554073337882-083013-0f65bb5b5f930d79e89d460014350852-3653350684"; 
   console.log("--> TOKEN MP EXISTE?:", !!accessToken);
 
@@ -25,7 +25,8 @@ export async function POST(request: Request) {
 
     const sql = neon(dbUrl);
 
-    // 1. Garante as tabelas no banco Neon
+    // 1. Garante as tabelas no banco Neon (unificadas com nome e arquivo)
+    // 1. Garante as tabelas e colunas necessárias no banco Neon
     await sql`
       CREATE TABLE IF NOT EXISTS pedidos (
         id SERIAL PRIMARY KEY,
@@ -47,13 +48,16 @@ export async function POST(request: Request) {
       );
     `;
 
+    // Garante que a coluna 'nome' exista caso a tabela já tenha sido criada antes sem ela
+    await sql`
+      ALTER TABLE pedido_itens ADD COLUMN IF NOT EXISTS nome VARCHAR(255);
+    `;
+
     const body = await request.json();
 
-    // Normaliza o payload para aceitar tanto o formato direto quanto objeto pedido
     const email = body.email || body.pedido?.cliente?.email;
     const nome = body.nome || body.pedido?.cliente?.nome || email?.split("@")[0] || "Cliente SIAC";
     
-    // Suporta envio de produto único ou array de produtos
     let produtos = [];
     if (body.produtoId && body.titulo && body.preco) {
       produtos = [{ id: body.produtoId, nome: body.titulo, preco: body.preco }];
@@ -86,15 +90,12 @@ export async function POST(request: Request) {
     console.log("--> INSERINDO ITENS DO PEDIDO...");
     for (const item of produtos) {
       await sql`
-        INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, preco) 
-        VALUES (${novoPedidoId}, ${Number(item.id)}, 1, ${Number(item.preco)})
+        INSERT INTO pedido_itens (pedido_id, produto_id, nome, quantidade, preco) 
+        VALUES (${novoPedidoId}, ${Number(item.id)}, ${String(item.nome)}, 1, ${Number(item.preco)})
       `;
     }
 
-    // Identificação dinâmica da URL (usa o host dinâmico do Cloudflare Tunnel)
-    const host = request.headers.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
-    const domainUrl = `${protocol}://${host}`;
+    const domainUrl = process.env.DOMAIN_URL || "https://practical-crafts-becoming-theology.trycloudflare.com";
 
     console.log("--> CRIANDO PREFERÊNCIA NO MERCADO PAGO...");
     const client = new MercadoPagoConfig({ accessToken });
