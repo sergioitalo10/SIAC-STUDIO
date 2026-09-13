@@ -27,23 +27,51 @@ export default function MinhaContaPage() {
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [redirecionandoCheckout, setRedirecionandoCheckout] = useState(false);
+
+  // Carrinho / Produto pendente escolhido na Home
+  const [produtoCarrinho, setProdutoCarrinho] = useState<any>(null);
 
   // Pedidos do cliente
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [carregandoPedidos, setCarregandoPedidos] = useState(false);
 
-  useEffect(() => {
-    const sessaoSalva = localStorage.getItem("cliente_sessao");
-    if (sessaoSalva) {
-      try {
-        const datos = JSON.parse(sessaoSalva);
-        setUsuario(datos);
-        carregarPedidos(datos.email);
-      } catch (e) {
-        console.error("Erro ao ler sessão local:", e);
+  // Função para gerar o link de checkout no Mercado Pago a partir do carrinho
+  const gerarCheckoutMercadoPago = async (prod: any, userEmail: string) => {
+    setCarregando(true);
+    setRedirecionandoCheckout(true);
+    try {
+      const res = await fetch("/api/mercadopago/preference", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          produtoId: prod.id,
+          titulo: prod.nome,
+          preco: prod.preco,
+          email: userEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.init_point) {
+        // Limpa o carrinho após gerar o link de pagamento
+        localStorage.removeItem("carrinho_pendente");
+        window.location.href = data.init_point;
+      } else {
+        alert("Erro ao gerar link de pagamento no Mercado Pago.");
+        setCarregando(false);
+        setRedirecionandoCheckout(false);
       }
+    } catch (err) {
+      console.error("Erro ao gerar checkout:", err);
+      alert("Falha de comunicação com o Mercado Pago.");
+      setCarregando(false);
+      setRedirecionandoCheckout(false);
     }
-  }, []);
+  };
 
   const carregarPedidos = async (userEmail: string) => {
     setCarregandoPedidos(true);
@@ -60,6 +88,31 @@ export default function MinhaContaPage() {
     }
   };
 
+  // 1. Carrega sessão local e lê o carrinho pendente
+  useEffect(() => {
+    try {
+      const sessaoSalva = localStorage.getItem("cliente_sessao");
+      const carrinhoSalvo = localStorage.getItem("carrinho_pendente");
+
+      if (carrinhoSalvo) {
+        try {
+          setProdutoCarrinho(JSON.parse(carrinhoSalvo));
+        } catch (e) {
+          console.error("Erro ao ler carrinho pendente:", e);
+        }
+      }
+
+      if (sessaoSalva) {
+        const datos = JSON.parse(sessaoSalva);
+        setUsuario(datos);
+        carregarPedidos(datos.email);
+      }
+    } catch (e) {
+      console.error("Erro ao ler sessão local:", e);
+    }
+  }, []);
+
+  // 2. Submissão do formulário de Login / Cadastro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
@@ -71,23 +124,39 @@ export default function MinhaContaPage() {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
         body: JSON.stringify(body),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
-        setErro(data.error || "Ocorreu um erro. Tente novamente.");
+        setErro(data.error || "E-mail ou senha inválidos.");
+        setCarregando(false);
         return;
       }
 
-      localStorage.setItem("cliente_sessao", JSON.stringify(data.usuario));
-      setUsuario(data.usuario);
-      carregarPedidos(data.usuario.email);
+      // Salva sessão local no navegador
+      const usuarioSessao = data.usuario;
+      localStorage.setItem("cliente_sessao", JSON.stringify(usuarioSessao));
+      setUsuario(usuarioSessao);
+
+      // Carrega lista de pedidos do cliente
+      await carregarPedidos(usuarioSessao.email);
+
+      // Mantém ou lê o carrinho atualizado para aparecer na tela
+      const carrinhoSalvo = localStorage.getItem("carrinho_pendente");
+      if (carrinhoSalvo) {
+        setProdutoCarrinho(JSON.parse(carrinhoSalvo));
+      }
+
+      setCarregando(false);
     } catch (err) {
-      setErro("Falha na conexão com o servidor.");
-    } finally {
+      console.error("Erro no formulário de autenticação:", err);
+      setErro("Falha na conexão com o servidor de autenticação.");
       setCarregando(false);
     }
   };
@@ -98,9 +167,24 @@ export default function MinhaContaPage() {
     setPedidos([]);
   };
 
+  // Se estiver gerando a preferência do Mercado Pago, exibe estado de carregamento amigável
+  if (redirecionandoCheckout) {
+    return (
+      <main className="min-h-screen bg-black text-white flex items-center justify-center p-6 text-center">
+        <div className="space-y-4 max-w-md p-8 rounded-2xl border border-gray-800 bg-gray-950">
+          <div className="text-4xl animate-spin">🔄</div>
+          <h2 className="text-xl font-bold">Gerando Checkout do Mercado Pago...</h2>
+          <p className="text-xs text-gray-400">
+            Aguarde um momento, estamos preparando o seu pagamento seguro via PIX.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-black text-white flex flex-col justify-between">
-      {/* CABEÇALHO IDÊNTICO À HOME */}
+      {/* CABEÇALHO */}
       <header className="border-b border-gray-800 bg-black sticky top-0 z-50 backdrop-blur-md bg-black/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-bold">
@@ -160,6 +244,47 @@ export default function MinhaContaPage() {
         {usuario ? (
           /* DASHBOARD LOGADO */
           <div className="space-y-8">
+            
+            {/* CARRINHO / PRODUTO PENDENTE ESCOLHIDO NA HOME */}
+            {produtoCarrinho && (
+              <div className="rounded-2xl border border-blue-500/40 bg-blue-950/20 p-6 shadow-xl">
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-blue-500/20">
+                  <div>
+                    <span className="text-xs font-semibold tracking-wider text-blue-400 uppercase">
+                      PENDENTE NO CARRINHO
+                    </span>
+                    <h3 className="text-lg font-bold text-white mt-1">Pronto para finalizar o pagamento</h3>
+                  </div>
+                  <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-400">
+                    Aguardando Pagamento
+                  </span>
+                </div>
+
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 w-full">
+                    <div className="w-16 h-16 bg-gray-900 rounded-xl overflow-hidden flex-shrink-0 border border-gray-800">
+                      <img src={produtoCarrinho.imagem} alt={produtoCarrinho.nome} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-base">{produtoCarrinho.nome}</h4>
+                      <p className="text-xs text-gray-400">Pacote Digital (.RAR) — Categoria: {produtoCarrinho.categoria}</p>
+                      <p className="text-sm font-semibold text-emerald-400 mt-1">
+                        R$ {Number(produtoCarrinho.preco).toFixed(2).replace(".", ",")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => gerarCheckoutMercadoPago(produtoCarrinho, usuario.email)}
+                    className="w-full md:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition cursor-pointer flex-shrink-0 text-center"
+                  >
+                    Pagar e Obter Arquivo (.RAR)
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* LISTA DE PEDIDOS APROVADOS */}
             <div className="flex items-center justify-between border-b border-gray-800 pb-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-blue-500">
@@ -177,7 +302,7 @@ export default function MinhaContaPage() {
                 <div className="text-4xl animate-bounce">📦</div>
                 <h3 className="mt-4 text-xl font-bold">Carregando seus arquivos...</h3>
               </div>
-            ) : pedidos.length === 0 ? (
+            ) : pedidos.length === 0 && !produtoCarrinho ? (
               <div className="rounded-2xl border border-gray-800 bg-gray-950 px-6 py-16 text-center">
                 <div className="text-4xl">🔎</div>
                 <h3 className="mt-4 text-xl font-bold">Nenhum pedido liberado no momento</h3>
@@ -306,7 +431,7 @@ export default function MinhaContaPage() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 mt-2 shadow-md shadow-blue-600/20"
+                className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 mt-2 shadow-md shadow-blue-600/20 cursor-pointer"
               >
                 {carregando ? "Acessando..." : isLogin ? "Entrar" : "Criar conta"}
               </button>
@@ -314,11 +439,12 @@ export default function MinhaContaPage() {
 
             <div className="mt-6 text-center border-t border-gray-800 pt-5">
               <button
+                type="button"
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setErro("");
                 }}
-                className="text-xs text-blue-400 hover:underline font-semibold"
+                className="text-xs text-blue-400 hover:underline font-semibold cursor-pointer"
               >
                 {isLogin
                   ? "Ainda não tem conta no SIAC STUDIO? Cadastre-se"
@@ -329,7 +455,7 @@ export default function MinhaContaPage() {
         )}
       </section>
 
-      {/* RODAPÉ DESTAQUES / IGUAL À HOME */}
+      {/* RODAPÉ */}
       <footer className="border-t border-gray-900 bg-gray-950 py-8 text-center text-xs text-gray-500">
         <p>© 2026 SIAC STUDIO — Todos os direitos reservados.</p>
       </footer>

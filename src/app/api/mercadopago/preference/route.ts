@@ -3,28 +3,29 @@ import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 
 export async function POST(request: Request) {
-  console.log("--> ROTA PREFERENCE CHAMADA (COM CLOUDFLARE TUNNEL)");
+  console.log("--> ROTA PREFERENCE CHAMADA (SIAC STUDIO)");
 
-  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  // TESTE DIRETO: Cole o seu token real aqui temporariamente entre as aspas
+  const accessToken = "APP_USR-7622554073337882-083013-0f65bb5b5f930d79e89d460014350852-3653350684"; 
   console.log("--> TOKEN MP EXISTE?:", !!accessToken);
 
   try {
     if (!accessToken) {
       console.error("ERRO: MERCADOPAGO_ACCESS_TOKEN é indefinido ou nulo.");
       return NextResponse.json(
-        { error: "MERCADOPAGO_ACCESS_TOKEN não configurado." },
+        { error: "MERCADOPAGO_ACCESS_TOKEN não configurado no .env.local" },
         { status: 500 }
       );
     }
 
-    const dbUrl = process.env.DATABASE_URL;
+    const dbUrl = (process.env.DATABASE_URL || "").trim();
     if (!dbUrl) {
       throw new Error("DATABASE_URL não configurada no ambiente.");
     }
 
     const sql = neon(dbUrl);
 
-    // Garante as tabelas no banco Neon
+    // 1. Garante as tabelas no banco Neon
     await sql`
       CREATE TABLE IF NOT EXISTS pedidos (
         id SERIAL PRIMARY KEY,
@@ -47,10 +48,27 @@ export async function POST(request: Request) {
     `;
 
     const body = await request.json();
-    const { pedido } = body;
-    console.log("--> DADOS DO PEDIDO RECEBIDO:", JSON.stringify(pedido));
 
-    const total = pedido.produtos.reduce(
+    // Normaliza o payload para aceitar tanto o formato direto quanto objeto pedido
+    const email = body.email || body.pedido?.cliente?.email;
+    const nome = body.nome || body.pedido?.cliente?.nome || email?.split("@")[0] || "Cliente SIAC";
+    
+    // Suporta envio de produto único ou array de produtos
+    let produtos = [];
+    if (body.produtoId && body.titulo && body.preco) {
+      produtos = [{ id: body.produtoId, nome: body.titulo, preco: body.preco }];
+    } else if (body.pedido?.produtos) {
+      produtos = body.pedido.produtos;
+    }
+
+    if (!email || produtos.length === 0) {
+      return NextResponse.json(
+        { error: "Dados do produto ou e-mail incompletos para gerar preference." },
+        { status: 400 }
+      );
+    }
+
+    const total = produtos.reduce(
       (acc: number, item: any) => acc + Number(item.preco),
       0
     );
@@ -58,7 +76,7 @@ export async function POST(request: Request) {
     console.log("--> INSERINDO PEDIDO NO NEON...");
     const resPedido: any = await sql`
       INSERT INTO pedidos (cliente, email, total, status) 
-      VALUES (${pedido.cliente.nome}, ${pedido.cliente.email}, ${total}, 'pendente') 
+      VALUES (${nome}, ${email}, ${total}, 'pendente') 
       RETURNING id
     `;
 
@@ -66,39 +84,41 @@ export async function POST(request: Request) {
     console.log("--> PEDIDO INSERIDO COM SUCESSO! ID:", novoPedidoId);
 
     console.log("--> INSERINDO ITENS DO PEDIDO...");
-    for (const item of pedido.produtos) {
+    for (const item of produtos) {
       await sql`
         INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, preco) 
         VALUES (${novoPedidoId}, ${Number(item.id)}, 1, ${Number(item.preco)})
       `;
     }
 
+    // Identificação dinâmica da URL (usa o host dinâmico do Cloudflare Tunnel)
+    const host = request.headers.get("host") || "localhost:3000";
+    const protocol = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+    const domainUrl = `${protocol}://${host}`;
+
     console.log("--> CRIANDO PREFERÊNCIA NO MERCADO PAGO...");
     const client = new MercadoPagoConfig({ accessToken });
     const preference = new Preference(client);
 
-    // URL do seu Tunnel ativo
-    const domainUrl = "https://giants-fees-minus-pty.trycloudflare.com";
-
     const response = await preference.create({
       body: {
-        items: pedido.produtos.map((produto: any) => ({
+        items: produtos.map((produto: any) => ({
           id: String(produto.id),
-          title: produto.nome,
+          title: String(produto.nome),
           quantity: 1,
           unit_price: Number(produto.preco),
           currency_id: "BRL",
         })),
         payer: {
-          name: pedido.cliente.nome,
-          email: pedido.cliente.email,
+          name: String(nome),
+          email: String(email).trim(),
         },
         external_reference: String(novoPedidoId),
         notification_url: `${domainUrl}/api/mercadopago/webhook`,
         back_urls: {
-          success: `${domainUrl}/pagamento/sucesso?pedido=${novoPedidoId}`,
-          failure: `${domainUrl}/pagamento/falha`,
-          pending: `${domainUrl}/pagamento/pendente`,
+          success: `${domainUrl}/minha-conta?status=sucesso&pedido=${novoPedidoId}`,
+          failure: `${domainUrl}/minha-conta?status=falha`,
+          pending: `${domainUrl}/minha-conta?status=pendente`,
         },
         auto_return: "approved",
       },
@@ -107,6 +127,7 @@ export async function POST(request: Request) {
     console.log("--> PREFERÊNCIA CRIADA COM SUCESSO! ID:", response.id);
 
     return NextResponse.json({
+      ok: true,
       pedidoId: novoPedidoId,
       id: response.id,
       init_point: response.init_point,
