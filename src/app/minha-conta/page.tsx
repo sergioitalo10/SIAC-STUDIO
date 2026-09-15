@@ -436,12 +436,12 @@ export default function MinhaContaPage() {
 
                             {!isPendente ? (
                               <a
-                                href={`/api/download/${pedido.id}/${item.id}`}
-                                download
-                                className="w-full sm:w-auto text-center px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-lg transition shadow-md shadow-blue-600/20"
-                              >
-                                Baixar Arquivo (.RAR)
+                              href={`/api/download?pedidoId=${pedido.id}&produtoId=${item.produto_id || item.produtoId || item.id}`}
+                              download
+                              className="w-full sm:w-auto text-center px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-lg transition shadow-md shadow-blue-600/20">
+                             Baixar Arquivo (.RAR)
                               </a>
+
                             ) : (
                               <span className="text-xs text-amber-400 font-medium">
                                 Disponível após aprovação do pagamento

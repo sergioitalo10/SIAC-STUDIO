@@ -8,19 +8,18 @@ interface ProductCardProps {
   categoria: string;
   preco: number;
   imagem: string;
+  arquivo: string;
 }
 
-export default function ProductCard({ id, nome, categoria, preco, imagem }: ProductCardProps) {
+export default function ProductCard({ id, nome, categoria, preco, imagem, arquivo }: ProductCardProps) {
   const router = useRouter();
 
   const handleComprar = () => {
-    // 1. Salva o produto selecionado no carrinho pendente para a Área do Cliente
     localStorage.setItem(
       "carrinho_pendente",
-      JSON.stringify({ id, nome, preco, imagem, categoria })
+      JSON.stringify({ id, nome, preco, imagem, categoria, arquivo })
     );
 
-    // 2. Redireciona para a Área do Cliente (onde ele fará login/cadastro e verá o carrinho)
     router.push("/minha-conta");
   };
 
