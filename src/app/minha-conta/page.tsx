@@ -21,6 +21,52 @@ export default function MinhaContaPage() {
   const [usuario, setUsuario] = useState<{ id: number; nome: string; email: string } | null>(null);
   const [isLogin, setIsLogin] = useState(true);
 
+  // Estados para a Fase 2 - Caixa de Mensagens
+const [mensagensPedido, setMensagensPedido] = useState<{ [pedidoId: number]: any[] }>({});
+const [novaMensagem, setNovaMensagem] = useState("");
+const [enviandoMsg, setEnviandoMsg] = useState(false);
+
+// Função para buscar as mensagens do Neon através da nossa API
+const carregarMensagensDoPedido = async (pedidoId: number) => {
+  try {
+    const res = await fetch(`/api/mensagens?pedidoId=${pedidoId}`);
+    const data = await res.json();
+    if (data.ok) {
+      setMensagensPedido(prev => ({ ...prev, [pedidoId]: data.mensagens || [] }));
+    }
+  } catch (err) {
+    console.error("Erro ao carregar mensagens do pedido:", err);
+  }
+};
+const handleEnviarMensagemCliente = async (pedidoId: number) => {
+  if (!novaMensagem.trim()) return;
+  setEnviandoMsg(true);
+
+  try {
+    const res = await fetch("/api/mensagens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pedidoId,
+        mensagem: novaMensagem,
+        autorTipo: "sistema" // Salvamos como sistema/cliente para o Admin saber que veio da área do cliente
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      setNovaMensagem("");
+      // Recarrega o chat imediatamente na tela
+      await carregarMensagensDoPedido(pedidoId);
+    }
+  } catch (err) {
+    console.error("Erro ao enviar mensagem:", err);
+    alert("Falha ao enviar mensagem de suporte.");
+  } finally {
+    setEnviandoMsg(false);
+  }
+};
+
   // Formulário
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
