@@ -1,228 +1,34 @@
-export type Product = {
-  id: number;
-  nome: string;
-  categoria: string;
-  mascote?: string;
-  modelo?: string;
-  preco: number;
-  imagem: string;
-  descricao: string;
-  destaque?: boolean;
-  tags?: string[];
-  tipoProduto: "digital";
-  formato: string;
-  arquivo: string;
-  tamanho: string;
-};
+import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-export const products: Product[] = [
-  {
-    id: 1,
-    nome: "Onça Bege",
-    categoria: "Interclasses",
-    mascote: "Onça",
-    modelo: "001-ONCA-BEGE",
-    preco: 19.90,
-    imagem: "/produtos/interclasses/onca/001-onca-bege/preview.png",
-    descricao: "Arte digital profissional para sublimação total, pronta para personalização.",
-    destaque: true,
-    tags: ["onça", "interclasses", "esporte", "camisa"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/produtos/interclasses/onca/001-onca-bege/onca-bege.rar",
-    tamanho: "20,3 MB",
-  },
-  {
-    id: 2,
-    nome: "Dragão Raio Roxo",
-    categoria: "Interclasses",
-    mascote: "Dragão",
-    modelo: "001-DRAGAO-RAIO-ROXO",
-    preco: 19.99,
-    imagem: "/produtos/interclasses/dragao/001-dragao-raio-roxo/preview.png",
-    descricao: "Arte digital profissional para sublimação total, pronta para personalização.",
-    destaque: true,
-    tags: ["dragão", "interclasses", "esporte", "camisa"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "dragao-raio-roxo.rar",
-    tamanho: "280 MB",
-  },
-  {
-    id: 3,
-    nome: "Leão Tribal Vermelho",
-    categoria: "Interclasses",
-    mascote: "Leão",
-    modelo: "001-LEAO-TRIBAL-VERMELHO",
-    preco: 20.00,
-    imagem: "/api/preview/interclasses/leao/001-leao-tribal-vermelho/preview.png",
-    descricao: "Arte digital premium do Leão Tribal Vermelho para sublimação total. Arquivo de alta qualidade totalmente preparado para produção.",
-    destaque: true,
-    tags: ["leão", "interclasses", "esporte", "camisa", "tribal", "vermelho"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/api/download/interclasses/leao/001-leao-tribal-vermelho/arquivo.rar",
-    tamanho: "1.0 MB",
-  },
-  {
-    id: 4,
-    nome: "Lince de Gelo",
-    categoria: "Interclasses",
-    mascote: "Lince",
-    modelo: "001-LINCE-GELO",
-    preco: 19.99,
-    imagem: "/produtos/interclasses/lince/001-lince-gelo/preview.png",
-    descricao: "Arte digital profissional para sublimação total...",
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/produtos/interclasses/lince/001-lince-gelo/lince-gelo.rar",
-    tamanho: "250 MB",
-  },
-  {
-    id: 8,
-    nome: "Leão Tribal Cítrico",
-    categoria: "Interclasses",
-    mascote: "Leão",
-    modelo: "002-LEAO-TRIBAL-CITRICO",
-    preco: 20.00,
-    imagem: "/api/preview/interclasses/leao/002-leao-tribal-citrico/preview.png",
-    descricao: "Arte digital premium do Leão Tribal Cítrico para sublimação total. Arquivo de alta qualidade totalmente preparado para produção.",
-    destaque: false,
-    tags: ["leão", "interclasses", "esporte", "camisa", "tribal", "cítrico"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/api/download/interclasses/leao/002-leao-tribal-citrico/arquivo.rar",
-    tamanho: "1.0 MB",
-  },
-  {
-    id: 9,
-    nome: "Leão Tribal Roxo",
-    categoria: "Interclasses",
-    mascote: "Leão",
-    modelo: "003-LEAO-TRIBAL-ROXO",
-    preco: 20.00,
-    imagem: "/api/preview/interclasses/leao/003-leao-tribal-roxo/preview.png",
-    descricao: "Arte digital premium do Leão Tribal Roxo para sublimação total. Arquivo de alta qualidade totalmente preparado para produção.",
-    destaque: false,
-    tags: ["leão", "interclasses", "esporte", "camisa", "tribal", "roxo"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/api/download/interclasses/leao/003-leao-tribal-roxo/arquivo.rar",
-    tamanho: "1.0 MB",
-  },
-  {
-    id: 10,
-    nome: "Leão Tribal Pink",
-    categoria: "Interclasses",
-    mascote: "Leão",
-    modelo: "004-LEAO-TRIBAL-PINK",
-    preco: 20.00,
-    imagem: "/api/preview/interclasses/leao/004-leao-tribal-pink/preview.png",
-    descricao: "Arte digital premium do Leão Tribal Pink para sublimação total. Arquivo de alta qualidade totalmente preparado para produção.",
-    destaque: false,
-    tags: ["leão", "interclasses", "esporte", "camisa", "tribal", "pink"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/api/download/interclasses/leao/004-leao-tribal-pink/arquivo.rar",
-    tamanho: "1.0 MB",
-  },
-  {
-    id: 11,
-    nome: "Leão Tribal Verde Água",
-    categoria: "Interclasses",
-    mascote: "Leão",
-    modelo: "005-LEAO-TRIBAL-VERDE-AGUA",
-    preco: 20.00,
-    imagem: "/api/preview/interclasses/leao/005-leao-tribal-verde-agua/preview.png",
-    descricao: "Arte digital premium do Leão Tribal Verde Água para sublimação total. Arquivo de alta qualidade totalmente preparado para produção.",
-    destaque: false,
-    tags: ["leão", "interclasses", "esporte", "camisa", "tribal", "verde água"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/api/download/interclasses/leao/005-leao-tribal-verde-agua/arquivo.rar",
-    tamanho: "1.0 MB",
-  },
-  {
-    id: 12,
-    nome: "Leão Tribal Gelo",
-    categoria: "Interclasses",
-    mascote: "Leão",
-    modelo: "006-LEAO-TRIBAL-GELO",
-    preco: 20.00,
-    imagem: "/api/preview/interclasses/leao/006-leao-tribal-gelo/preview.png",
-    descricao: "Arte digital premium do Leão Tribal Gelo para sublimação total. Arquivo de alta qualidade totalmente preparado para produção.",
-    destaque: false,
-    tags: ["leão", "interclasses", "esporte", "camisa", "tribal", "gelo"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/api/download/interclasses/leao/006-leao-tribal-gelo/arquivo.rar",
-    tamanho: "1.0 MB",
-  },
-  {
-    id: 13,
-    nome: "Leão Tribal Laranja",
-    categoria: "Interclasses",
-    mascote: "Leão",
-    modelo: "007-LEAO-TRIBAL-LARANJA",
-    preco: 20.00,
-    imagem: "/api/preview/interclasses/leao/007-leao-tribal-laranja/preview.png",
-    descricao: "Arte digital premium do Leão Tribal Laranja para sublimação total. Arquivo de alta qualidade totalmente preparado para produção.",
-    destaque: false,
-    tags: ["leão", "interclasses", "esporte", "camisa", "tribal", "laranja"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "/api/download/interclasses/leao/007-leao-tribal-laranja/arquivo.rar",
-    tamanho: "1.0 MB",
-  }
-  
-  /* 
-  === PRODUTOS EM STANDBY ===
-  Desativados temporariamente para focar apenas em Interclasses.
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> | { path: string[] } }
+) {
+  try {
+    const resolvedParams = await context.params;
+    const pathSegments = resolvedParams.path;
 
-  {
-    id: 5,
-    nome: "Arte Motocross Premium",
-    categoria: "Motocross",
-    modelo: "001-MOTOCROSS-PREMIUM",
-    preco: 16.90,
-    imagem: "/produtos/motocross/001-motocross-premium/preview.png",
-    descricao: "Modelo de arte profissional para camisas de motocross e esportes radicais.",
-    destaque: true,
-    tags: ["motocross", "moto", "esporte"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "motocross-premium.rar",
-    tamanho: "310 MB",
-  },
-  {
-    id: 6,
-    nome: "Arte Ciclismo Premium",
-    categoria: "Ciclismo",
-    modelo: "001-CICLISMO-PREMIUM",
-    preco: 15.90,
-    imagem: "/produtos/ciclismo/001-ciclismo-premium/preview.png",
-    descricao: "Arte digital para camisas de ciclismo e equipes esportivas.",
-    destaque: false,
-    tags: ["ciclismo", "bike", "esporte"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "ciclismo-premium.rar",
-    tamanho: "240 MB",
-  },
-  {
-    id: 7,
-    nome: "Arte Fitness Premium",
-    categoria: "Fitness",
-    modelo: "001-FITNESS-PREMIUM",
-    preco: 13.90,
-    imagem: "/produtos/fitness/001-fitness-premium/preview.png",
-    descricao: "Arte moderna para camisetas fitness, academias e equipes esportivas.",
-    destaque: false,
-    tags: ["fitness", "academia", "esporte"],
-    tipoProduto: "digital",
-    formato: "RAR",
-    arquivo: "fitness-premium.rar",
-    tamanho: "210 MB",
+    if (!pathSegments || pathSegments.length === 0) {
+      return new NextResponse('Caminho inválido', { status: 400 });
+    }
+
+    const filePath = path.join(process.cwd(), 'arquivos', ...pathSegments);
+
+    if (!fs.existsSync(filePath)) {
+      return new NextResponse('Imagem não encontrada', { status: 404 });
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+
+    return new NextResponse(fileBuffer, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    });
+  } catch (error) {
+    return new NextResponse('Erro interno', { status: 500 });
   }
-  */
-];
+}
