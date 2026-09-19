@@ -76,7 +76,7 @@ export const products: Product[] = [
     tipoProduto: "digital",
     formato: "RAR",
     arquivo: "/produtos/interclasses/lince/001-lince-gelo/lince-gelo.rar",
-    tamanho: "250 MB",
+    tamanho: "12.3 MB",
   },
   {
     id: 8,
