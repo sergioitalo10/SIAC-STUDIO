@@ -13,7 +13,7 @@ export const products: Product[] = [
   // --- MASCARAS / OUTROS ---
   {
     id: 1,
-    nome: "Arte Interclasses - Arara Azul",
+    nome: "Arara Azul",
     categoria: "Interclasses",
     mascote: "Arara",
     preco: 20.0,
@@ -23,7 +23,7 @@ export const products: Product[] = [
   },
   {
     id: 2,
-    nome: "Arte Interclasses - Fênix Amarela",
+    nome: "Fênix Amarela",
     categoria: "Interclasses",
     mascote: "Fênix",
     preco: 20.0,
@@ -35,7 +35,7 @@ export const products: Product[] = [
   // --- LEÕES (7 MODELOS) ---
   {
     id: 3,
-    nome: "Arte Interclasses - Leão Tribal Vermelho",
+    nome: "Leão Tribal Vermelho",
     categoria: "Interclasses",
     mascote: "Leão",
     preco: 20.0,
@@ -45,7 +45,7 @@ export const products: Product[] = [
   },
   {
     id: 8,
-    nome: "Arte Interclasses - Leão Tribal Cítrico",
+    nome: "Leão Tribal Cítrico",
     categoria: "Interclasses",
     mascote: "Leão",
     preco: 20.0,
@@ -55,7 +55,7 @@ export const products: Product[] = [
   },
   {
     id: 9,
-    nome: "Arte Interclasses - Leão Tribal Roxo",
+    nome: "Leão Tribal Roxo",
     categoria: "Interclasses",
     mascote: "Leão",
     preco: 20.0,
@@ -65,7 +65,7 @@ export const products: Product[] = [
   },
   {
     id: 10,
-    nome: "Arte Interclasses - Leão Tribal Pink",
+    nome: "Leão Tribal Pink",
     categoria: "Interclasses",
     mascote: "Leão",
     preco: 20.0,
@@ -75,7 +75,7 @@ export const products: Product[] = [
   },
   {
     id: 11,
-    nome: "Arte Interclasses - Leão Tribal Verde Água",
+    nome: "Leão Tribal Verde Água",
     categoria: "Interclasses",
     mascote: "Leão",
     preco: 20.0,
@@ -85,7 +85,7 @@ export const products: Product[] = [
   },
   {
     id: 12,
-    nome: "Arte Interclasses - Leão Tribal Gelo",
+    nome: "Leão Tribal Gelo",
     categoria: "Interclasses",
     mascote: "Leão",
     preco: 20.0,
@@ -95,7 +95,7 @@ export const products: Product[] = [
   },
   {
     id: 13,
-    nome: "Arte Interclasses - Leão Tribal Laranja",
+    nome: "Leão Tribal Laranja",
     categoria: "Interclasses",
     mascote: "Leão",
     preco: 20.0,
@@ -107,7 +107,7 @@ export const products: Product[] = [
   // --- TIGRES (4 MODELOS) ---
   {
     id: 14,
-    nome: "Arte Interclasses - Tigre Amarelo e Preto",
+    nome: "Tigre Amarelo e Preto",
     categoria: "Interclasses",
     mascote: "Tigre",
     preco: 20.0,
@@ -117,7 +117,7 @@ export const products: Product[] = [
   },
   {
     id: 15,
-    nome: "Arte Interclasses - Tigre Vermelho e Laranja",
+    nome: "Tigre Vermelho e Laranja",
     categoria: "Interclasses",
     mascote: "Tigre",
     preco: 20.0,
@@ -127,7 +127,7 @@ export const products: Product[] = [
   },
   {
     id: 16,
-    nome: "Arte Interclasses - Tigre Tons de Verde",
+    nome: "Tigre Tons de Verde",
     categoria: "Interclasses",
     mascote: "Tigre",
     preco: 20.0,
@@ -137,7 +137,7 @@ export const products: Product[] = [
   },
   {
     id: 17,
-    nome: "Arte Interclasses - Tigre Branco",
+    nome: "Tigre Branco",
     categoria: "Interclasses",
     mascote: "Tigre",
     preco: 20.0,
@@ -149,29 +149,39 @@ export const products: Product[] = [
   // --- PANTERAS (NOVOS MODELOS) ---
   {
     id: 18,
-    nome: "Arte Interclasses - Pantera Negra",
+    nome: "Pantera roxa",
     categoria: "Interclasses",
     mascote: "Pantera",
     preco: 20.0,
-    imagem: "/api/preview/interclasses/pantera/001-pantera-negra/preview.png",
-    downloadUrl: "/api/download/interclasses/pantera/001-pantera-negra/arquivo.rar",
-    tags: ["pantera", "negra", "preta", "interclasses"],
+    imagem: "/api/preview/interclasses/pantera/001-pantera-roxa/preview.png",
+    downloadUrl: "/api/download/interclasses/pantera/001-pantera-roxa/arquivo.rar",
+    tags: ["pantera", "roxa", "interclasses"],
   },
   {
     id: 19,
-    nome: "Arte Interclasses - Pantera Roxa",
+    nome: "Pantera Laranja",
     categoria: "Interclasses",
     mascote: "Pantera",
     preco: 20.0,
-    imagem: "/api/preview/interclasses/pantera/002-pantera-roxa/preview.png",
-    downloadUrl: "/api/download/interclasses/pantera/002-pantera-roxa/arquivo.rar",
-    tags: ["pantera", "roxa", "interclasses"],
+    imagem: "/api/preview/interclasses/pantera/002-pantera-laranja/preview.png",
+    downloadUrl: "/api/download/interclasses/pantera/002-pantera-laranja/arquivo.rar",
+    tags: ["pantera", "laranja", "roxa", "interclasses"],
+  },
+  {
+    id: 20,
+    nome: "Pantera Rainbow",
+    categoria: "Interclasses",
+    mascote: "Pantera",
+    preco: 20.0,
+    imagem: "/api/preview/interclasses/pantera/003-pantera-rainbow/preview.png",
+    downloadUrl: "/api/download/interclasses/pantera/003-pantera-rainbow/arquivo.rar",
+    tags: ["pantera", "rainbow", "interclasses"],
   },
 
   // --- OUTROS MASCOTES ---
   {
     id: 4,
-    nome: "Arte Interclasses - Onça Bege",
+    nome: "Onça Bege",
     categoria: "Interclasses",
     mascote: "Onça",
     preco: 20.0,
@@ -181,7 +191,7 @@ export const products: Product[] = [
   },
   {
     id: 5,
-    nome: "Arte Interclasses - Dragão Raio Roxo",
+    nome: "Dragão Raio Roxo",
     categoria: "Interclasses",
     mascote: "Dragão",
     preco: 20.0,
@@ -191,7 +201,7 @@ export const products: Product[] = [
   },
   {
     id: 6,
-    nome: "Arte Interclasses - Lince de Gelo",
+    nome: "Lince de Gelo",
     categoria: "Interclasses",
     mascote: "Lince",
     preco: 20.0,
@@ -199,4 +209,44 @@ export const products: Product[] = [
     downloadUrl: "/api/download/interclasses/lince/001-lince-gelo/arquivo.rar",
     tags: ["lince", "gelo", "azul", "interclasses"],
   },
+  {
+    id: 21,
+    nome: "Coringa gangster",
+    categoria: "Interclasses",
+    mascote: "Coringa",
+    preco: 20.0,
+    imagem: "/api/preview/interclasses/coringa/001-coringa-gangster/preview.png",
+    downloadUrl: "/api/download/interclasses/coringa/001-coringa-gangster/arquivo.rar",
+    tags: ["coringa", "gelo", "azul", "interclasses"],
+  },
+  {
+    id: 22,
+    nome: "Grifo Dourado",
+    categoria: "Interclasses",
+    mascote: "Grifo",
+    preco: 20.0,
+    imagem: "/api/preview/interclasses/grifo/001-grifo-dourado/preview.png",
+    downloadUrl: "/api/download/interclasses/grifo/001-grifo-dourado/arquivo.rar",
+    tags: ["grifo", "dourado","interclasses"],
+   },
+   {
+    id: 23,
+    nome: "Venom Dark",
+    categoria: "Interclasses",
+    mascote: "Venom",
+    preco: 20.0,
+    imagem: "/api/preview/interclasses/venom/001-venom-dark/preview.png",
+    downloadUrl: "/api/download/interclasses/venom/001-venom-dark/arquivo.rar",
+    tags: ["venom", "dark", "interclasses"],
+   },
+    {
+    id: 24,
+    nome: "Fênix Amarela",
+    categoria: "Interclasses",
+    mascote: "Fenix",
+    preco: 20.0,
+    imagem: "/api/preview/interclasses/fenix/001-fenix-amarela/preview.png",
+    downloadUrl: "/api/download/interclasses/fenix/001-fenix-amarela/arquivo.rar",
+    tags: ["fenix", "amarelo", "interclasses", "camisa jogos"],
+   },
 ];
