@@ -482,7 +482,7 @@ const handleEnviarMensagemCliente = async (pedidoId: number) => {
 
                             {!isPendente ? (
                               <a
-                              href={`/api/download?pedidoId=${pedido.id}&produtoId=${item.produto_id || item.produtoId || item.id}`}
+                              href={`/api/download?pedidoId=${pedido.id}`}
                               download
                               className="w-full sm:w-auto text-center px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-lg transition shadow-md shadow-blue-600/20">
                              Baixar Arquivo (.RAR)

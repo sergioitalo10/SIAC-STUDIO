@@ -1,12 +1,16 @@
 ﻿export interface Product {
   id: number;
   nome: string;
-  categoria: string;
+  categoria: string | string[];
   mascote?: string;
   preco: number;
   imagem: string;
   downloadUrl?: string;
   tags?: string[];
+
+  descricao?: string;
+  formato?: string;
+  tamanho?: string;
 }
 
 export const products: Product[] = [

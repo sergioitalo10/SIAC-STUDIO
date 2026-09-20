@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -11,53 +13,87 @@ export async function GET(
     const pathSegments = resolvedParams.path || [];
 
     if (pathSegments.length === 0) {
-      return new NextResponse("Caminho inválido", { status: 400 });
+      return new NextResponse("Caminho inválido", {
+        status: 400,
+      });
     }
 
-    const relativePath = pathSegments.join("/");
-
-    // 1. Em PRODUÇÃO (Vercel), redireciona diretamente para o arquivo servido estaticamente
-    if (process.env.NODE_ENV !== "development") {
-      const publicUrl = new URL(`/${relativePath}`, request.url);
-      return NextResponse.redirect(publicUrl);
+    // Proteção contra Path Traversal
+    if (
+      pathSegments.some(
+        (segment) =>
+          segment === ".." ||
+          segment === "." ||
+          segment.includes("\\")
+      )
+    ) {
+      return new NextResponse("Caminho inválido", {
+        status: 400,
+      });
     }
 
-    // 2. Em DESENVOLVIMENTO LOCAL, importa 'fs' e 'path' dinamicamente usando eval
-    // para impedir que o analisador estático do Turbopack rastreie o disco em produção
-    const fs = eval('require("fs")');
-    const path = eval('require("path")');
+    // Pasta onde ficam os previews
+    const basePath = path.resolve(
+      process.cwd(),
+      "arquivos",
+      "interclasses"
+    );
 
-    const tentativas = [
-      path.join(process.cwd(), "arquivos", relativePath),
-      path.join(process.cwd(), "public", relativePath),
-    ];
+    const filePath = path.resolve(
+      basePath,
+      ...pathSegments
+    );
 
-    let filePath = "";
-    for (const local of tentativas) {
-      if (fs.existsSync(local)) {
-        filePath = local;
-        break;
-      }
+    // Garante que o arquivo permanece dentro de /arquivos/interclasses
+    if (
+      filePath !== basePath &&
+      !filePath.startsWith(basePath + path.sep)
+    ) {
+      return new NextResponse("Caminho inválido", {
+        status: 400,
+      });
     }
 
-    if (!filePath) {
-      return new NextResponse("Imagem não encontrada", { status: 404 });
+    // A API de preview só pode entregar PNG
+    const extension = path
+      .extname(filePath)
+      .toLowerCase();
+
+    if (extension !== ".png") {
+      return new NextResponse("Arquivo não permitido", {
+        status: 403,
+      });
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
-    const ext = path.extname(filePath).toLowerCase();
-    let contentType = "image/png";
-    if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
-    if (ext === ".webp") contentType = "image/webp";
+    if (!fs.existsSync(filePath)) {
+      return new NextResponse("Preview não encontrado", {
+        status: 404,
+      });
+    }
+
+    const fileBuffer = fs.readFileSync(
+      /* turbopackIgnore: true */ filePath
+    );
 
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
-        "Content-Type": contentType,
+        "Content-Type": "image/png",
+        "Cache-Control":
+          "public, max-age=31536000, immutable",
       },
     });
   } catch (error) {
-    console.error("[Preview API Error]:", error);
-    return new NextResponse("Erro ao carregar preview", { status: 500 });
+    console.error(
+      "[Preview API Error]:",
+      error
+    );
+
+    return new NextResponse(
+      "Erro ao carregar preview",
+      {
+        status: 500,
+      }
+    );
   }
 }
