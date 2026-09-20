@@ -32,7 +32,7 @@ export async function GET(
       });
     }
 
-    // Pasta onde ficam os previews
+    // Apenas previews PNG dentro de /arquivos/interclasses
     const basePath = path.resolve(
       process.cwd(),
       "arquivos",
@@ -44,7 +44,7 @@ export async function GET(
       ...pathSegments
     );
 
-    // Garante que o arquivo permanece dentro de /arquivos/interclasses
+    // Garante que o arquivo permanece dentro da pasta permitida
     if (
       filePath !== basePath &&
       !filePath.startsWith(basePath + path.sep)
@@ -54,18 +54,15 @@ export async function GET(
       });
     }
 
-    // A API de preview só pode entregar PNG
-    const extension = path
-      .extname(filePath)
-      .toLowerCase();
-
-    if (extension !== ".png") {
+    // A rota de preview só permite PNG
+    if (path.extname(filePath).toLowerCase() !== ".png") {
       return new NextResponse("Arquivo não permitido", {
         status: 403,
       });
     }
 
-    if (!fs.existsSync(filePath)) {
+    // Ignora o rastreamento automático do filesystem pelo Turbopack.
+    if (!fs.existsSync(/* turbopackIgnore: true */ filePath)) {
       return new NextResponse("Preview não encontrado", {
         status: 404,
       });
@@ -84,10 +81,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error(
-      "[Preview API Error]:",
-      error
-    );
+    console.error("[Preview API Error]:", error);
 
     return new NextResponse(
       "Erro ao carregar preview",
