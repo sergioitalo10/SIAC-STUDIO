@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -18,47 +16,11 @@ export async function GET(
 
     const relativePath = pathSegments.join("/");
 
-    const baseArquivos = path.join(process.cwd(), "arquivos");
-    const basePublic = path.join(process.cwd(), "public");
+    // Redireciona diretamente para o arquivo dentro da pasta public
+    // que a Vercel serve estaticamente via CDN
+    const publicUrl = new URL(`/${relativePath}`, request.url);
 
-    const tentativas = [
-      path.join(baseArquivos, relativePath),
-      path.join(basePublic, relativePath),
-    ];
-
-    let filePath = "";
-
-    for (const local of tentativas) {
-      // Adicionado turbopackIgnore na checagem de arquivo
-      if (fs.existsSync(/*turbopackIgnore: true*/ local)) {
-        filePath = local;
-        break;
-      }
-    }
-
-    if (!filePath) {
-      return new NextResponse("Imagem não encontrada", { status: 404 });
-    }
-
-    // Adicionado turbopackIgnore na leitura do arquivo
-    const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ filePath);
-
-    if (fileBuffer.length === 0) {
-      return new NextResponse("Imagem vazia", { status: 404 });
-    }
-
-    const ext = path.extname(filePath).toLowerCase();
-    let contentType = "image/png";
-    if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
-    if (ext === ".webp") contentType = "image/webp";
-
-    return new NextResponse(fileBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
-    });
+    return NextResponse.redirect(publicUrl);
   } catch (error) {
     console.error("[Preview API Error]:", error);
     return new NextResponse("Erro ao carregar preview", { status: 500 });
