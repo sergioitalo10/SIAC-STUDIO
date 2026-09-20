@@ -5,16 +5,23 @@ import { useRouter } from "next/navigation";
 interface ProductCardProps {
   id: number;
   nome: string;
-  categoria: string;
+  categoria: string | string[]; // Suporta 1 ou mais categorias
   preco: number;
   imagem: string;
-  arquivo: string;
+  arquivo?: string;
 }
 
 export default function ProductCard({ id, nome, categoria, preco, imagem, arquivo }: ProductCardProps) {
   const router = useRouter();
 
-  const handleComprar = () => {
+  // Formata a categoria com espaçamento adequado se for um array
+  const categoriaFormatada = Array.isArray(categoria)
+    ? categoria.join(" • ")
+    : categoria;
+
+  const handleComprar = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita conflitos ao clicar diretamente no botão comprar
+
     localStorage.setItem(
       "carrinho_pendente",
       JSON.stringify({ id, nome, preco, imagem, categoria, arquivo })
@@ -33,7 +40,7 @@ export default function ProductCard({ id, nome, categoria, preco, imagem, arquiv
             className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
           />
           <span className="absolute top-3 left-3 px-2.5 py-1 bg-black/80 text-blue-400 text-[10px] font-semibold rounded-full border border-blue-500/20">
-            {categoria}
+            {categoriaFormatada}
           </span>
         </div>
 

@@ -23,12 +23,12 @@ export const products: Product[] = [
   },
   {
     id: 2,
-    nome: "Fênix Amarela",
-    categoria: "Interclasses",
+    nome: "Arara Vermelha",
+    categoria: ["Interclasses", "Lançamentos"],
     mascote: "Fênix",
     preco: 20.0,
-    imagem: "/api/preview/interclasses/fenix/001-fenix-amarela/preview.png",
-    downloadUrl: "/api/download/interclasses/fenix/001-fenix-amarela/arquivo.rar",
+    imagem: "/api/preview/interclasses/arara/002-arara-vermelha/preview.png",
+    downloadUrl: "/api/download/interclasses/arara/002-arara-vermelha/arquivo.rar",
     tags: ["fenix", "amarela", "fogo", "interclasses"],
   },
 
