@@ -321,7 +321,7 @@ export const products: Product[] = [
   {
     id: 32,
     nome: "Kraken Azul",
-    categoria: "Interclasses",
+    categoria: ["Interclasses", "Lançamentos"],
     mascote: "Kraken",
     preco: 20.0,
     imagem: "/api/preview/interclasses/kraken/001-kraken-azul/preview.png",
@@ -331,7 +331,7 @@ export const products: Product[] = [
   {
     id: 33,
     nome: "Kraken Pink Roxo",
-    categoria: "Interclasses",
+    categoria: ["Interclasses", "Lançamentos"],
     mascote: "Kraken",
     preco: 20.0,
     imagem: "/api/preview/interclasses/kraken/002-kraken-pink-roxo/preview.png",

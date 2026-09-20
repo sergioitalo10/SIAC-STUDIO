@@ -7,23 +7,73 @@ import CartButton from "@/components/CartButton";
 import { products, Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 
+// DADOS DOS BANNERS ROTATIVOS (CARROSSEL)
+const BANNERS = [
+  {
+    id: 1,
+    tag: "",
+    titulo: "",
+    descricao: "",
+    botaoTexto: "",
+    categoriaAlvo: "Interclasses",
+    corDestaque: "from-transparent to-transparent",
+    imagemFundo: "/banner1.png",
+  },
+  {
+    id: 2,
+    tag: "DOWNLOAD IMEDIATO • CDR & PNG",
+    titulo: "Artes 100% Vetorizadas",
+    descricao: "Arquivos organizados por camadas para facilitar a sua produção no CorelDRAW.",
+    botaoTexto: "Explorar Catálogo",
+    categoriaAlvo: "Todas",
+    corDestaque: "from-purple-600/30 to-blue-900/40",
+    imagemFundo: "",
+  },
+  {
+    id: 3,
+    tag: "LANÇAMENTOS EXCLUSIVOS",
+    titulo: "Kits de Mascotes Premium",
+    descricao: "Pantera, Coringa, Venom, Kraken, Leão e Tigre atualizados para sublimação.",
+    botaoTexto: "Ver Lançamentos",
+    categoriaAlvo: "Lançamentos",
+    corDestaque: "from-cyan-600/30 to-blue-900/40",
+    imagemFundo: "",
+  },
+];
+
 export default function Home() {
   const [busca, setBusca] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todas");
   const [mascoteSelecionado, setMascoteSelecionado] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
   const [usuario, setUsuario] = useState<{ id: number; nome: string; email: string } | null>(null);
-  
+
+  // ESTADO DOS BANNERS ROTATIVOS
+  const [bannerAtual, setBannerAtual] = useState(0);
+  const [pausarRotacao, setPausarRotacao] = useState(false);
+
   // ESTADO DO QUADRO DE PREVIEW & COMPRA NO CENTRO DA TELA
   const [produtoEmDestaque, setProdutoEmDestaque] = useState<Product | null>(null);
 
-  // ESTADOS E REF PARA O EFEITO DE ZOOM AO PASSAR O MOUSE
+  // ESTADOS E REF PARA O EFEITO DE ZOOM
   const [isHovered, setIsHovered] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const imgContainerRef = useRef<HTMLDivElement>(null);
 
   const { addToCart } = useCart();
 
+  // ROTAÇÃO AUTOMÁTICA DOS BANNERS (5 SEGUNDOS)
+  useEffect(() => {
+    if (pausarRotacao) return;
+
+    const timer = setInterval(() => {
+      setBannerAtual((prev) => (prev + 1) % BANNERS.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [pausarRotacao]);
+
+  // Carrega a sessão do usuário
   useEffect(() => {
     const sessaoSalva = localStorage.getItem("cliente_sessao");
     if (sessaoSalva) {
@@ -35,24 +85,36 @@ export default function Home() {
     }
   }, []);
 
+  // Gera a lista de categorias sem duplicados (suportando arrays de categorias)
   const categorias = useMemo(() => {
-    return ["Todas", ...new Set(products.map((product) => product.categoria))];
+    const listaCategorias = products.flatMap((product) =>
+      Array.isArray(product.categoria) ? product.categoria : [product.categoria]
+    );
+    return ["Todas", ...new Set(listaCategorias)];
   }, []);
 
   const mascotesInterclasses = useMemo(() => {
     const mascotes = products
-      .filter((p) => p.categoria === "Interclasses" && p.mascote)
+      .filter((p) => {
+        const cats = Array.isArray(p.categoria) ? p.categoria : [p.categoria];
+        return cats.includes("Interclasses") && p.mascote;
+      })
       .map((p) => p.mascote as string);
     return [...new Set(mascotes)];
   }, []);
 
+  // Filtra os produtos com base na categoria, mascote e busca
   const produtosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
 
     return products.filter((product) => {
+      const categoriasDoProduto = Array.isArray(product.categoria)
+        ? product.categoria
+        : [product.categoria];
+
       const correspondeCategoria =
         categoriaSelecionada === "Todas" ||
-        product.categoria === categoriaSelecionada;
+        categoriasDoProduto.includes(categoriaSelecionada);
 
       const correspondeMascote =
         !mascoteSelecionado || product.mascote === mascoteSelecionado;
@@ -60,7 +122,7 @@ export default function Home() {
       const correspondeBusca =
         termo === "" ||
         product.nome.toLowerCase().includes(termo) ||
-        product.categoria.toLowerCase().includes(termo) ||
+        categoriasDoProduto.some((cat) => cat.toLowerCase().includes(termo)) ||
         product.tags?.some((tag) => tag.toLowerCase().includes(termo));
 
       return correspondeCategoria && correspondeMascote && correspondeBusca;
@@ -77,12 +139,21 @@ export default function Home() {
     setMascoteSelecionado(mascote);
   }
 
+  function filtrarPorMenu(categoria: string) {
+    setCategoriaSelecionada(categoria);
+    setMascoteSelecionado(null);
+
+    const elementoProdutos = document.getElementById("produtos");
+    if (elementoProdutos) {
+      elementoProdutos.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
   function handleComprarAgora(product: Product) {
     addToCart(product);
     setProdutoEmDestaque(null);
   }
 
-  // CÁLCULO DA POSIÇÃO DO MOUSE PARA O EFEITO LUPA DE ZOOM
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!imgContainerRef.current) return;
 
@@ -97,48 +168,61 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white" suppressHydrationWarning>
+    <main className="relative min-h-screen bg-black text-white" suppressHydrationWarning>
 
-      {/* CABEÇALHO INTEGRADO */}
-      <header className="sticky top-0 z-40 border-b border-gray-800 bg-black/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+      {/* CABEÇALHO EXPANDIDO */}
+      <header className="sticky top-0 z-40 min-h-[96px] border-b border-gray-800 bg-black/90 backdrop-blur-md flex items-center">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6">
 
-          <Link href="/" className="text-xl font-bold tracking-tight" suppressHydrationWarning>
-            SIAC <span className="text-blue-500">STUDIO</span>
+          <Link href="/" className="flex items-center gap-3 transition hover:opacity-90" suppressHydrationWarning>
+            <img src="/logo.png" alt="SIAC Studio" className="h-14 w-auto object-contain" />
+            <span className="text-2xl font-bold tracking-tight">
+              SIAC <span className="text-blue-500">STUDIO</span>
+            </span>
           </Link>
 
-          <nav className="hidden gap-6 md:flex text-sm font-medium">
-            <a href="#produtos" className="hover:text-blue-500 transition">
+          {/* NAVEGAÇÃO COM FILTRO AUTOMÁTICO DO CABEÇALHO */}
+          <nav className="hidden gap-8 md:flex text-sm font-semibold tracking-wide">
+            <button
+              onClick={() => filtrarPorMenu("Todas")}
+              className="hover:text-blue-500 transition text-left"
+            >
               Catálogo
-            </a>
-            <a href="#categorias" className="hover:text-blue-500 transition">
+            </button>
+            <button
+              onClick={() => filtrarPorMenu("Interclasses")}
+              className="hover:text-blue-500 transition text-left"
+            >
               Categorias
-            </a>
-            <a href="#destaques" className="hover:text-blue-500 transition">
+            </button>
+            <button
+              onClick={() => filtrarPorMenu("Lançamentos")}
+              className="hover:text-blue-500 transition text-left"
+            >
               Lançamentos
-            </a>
+            </button>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {usuario ? (
               <Link
                 href="/minha-conta"
-                className="flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-950/40 px-3 py-1.5 text-xs font-semibold text-blue-400 transition hover:border-blue-500 hover:bg-blue-900/50"
+                className="flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-950/40 px-4 py-2 text-xs font-semibold text-blue-400 transition hover:border-blue-500 hover:bg-blue-900/50"
               >
-                <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
+                <span className="h-2.5 w-2.5 rounded-full bg-blue-400 animate-pulse"></span>
                 <span>Olá, {usuario.nome.split(" ")[0]}</span>
               </Link>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Link
                   href="/minha-conta"
-                  className="text-xs font-semibold text-gray-300 hover:text-white transition px-2 py-1"
+                  className="text-xs font-semibold text-gray-300 hover:text-white transition px-3 py-1.5"
                 >
                   Entrar
                 </Link>
                 <Link
                   href="/minha-conta"
-                  className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/20"
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/20"
                 >
                   Criar conta
                 </Link>
@@ -151,26 +235,117 @@ export default function Home() {
         </div>
       </header>
 
-      {/* BANNER PRINCIPAL */}
-      <section className="border-b border-gray-900 bg-gray-950 py-8">
-        <div className="mx-auto max-w-7xl px-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-500">
-            SIAC STUDIO • SUBLIMAÇÃO TOTAL
-          </p>
+      {/* BANNERS ROTATIVOS (1280x300) */}
+      <section 
+        className="relative overflow-hidden border-b border-gray-900 bg-gray-950 py-3 md:py-4"
+        onMouseEnter={() => setPausarRotacao(true)}
+        onMouseLeave={() => setPausarRotacao(false)}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div 
+            onClick={() => {
+              if (BANNERS[bannerAtual].categoriaAlvo) {
+                selecionarCategoria(BANNERS[bannerAtual].categoriaAlvo);
+              }
+            }}
+            className={`relative w-full aspect-[1280/300] max-h-[280px] overflow-hidden rounded-xl border border-gray-800 bg-gradient-to-r shadow-xl transition-all duration-700 ease-in-out flex items-center justify-center ${
+              BANNERS[bannerAtual].imagemFundo ? "cursor-pointer" : ""
+            }`}
+          >
+            {/* IMAGEM DE FUNDO DO BANNER */}
+            {BANNERS[bannerAtual].imagemFundo && (
+              <img
+                src={BANNERS[bannerAtual].imagemFundo}
+                alt={BANNERS[bannerAtual].titulo || "Banner promocional"}
+                className="absolute inset-0 h-full w-full object-contain md:object-cover z-0"
+              />
+            )}
 
-          <h1 className="mt-2 text-2xl font-extrabold tracking-tight md:text-4xl">
-            Artes Profissionais Prontas para Produção
-          </h1>
+            {/* GRADIENTE DE SOBREPOSIÇÃO (QUANDO HOUVER TEXTO) */}
+            {BANNERS[bannerAtual].titulo && (
+              <div className={`bg-gradient-to-r ${BANNERS[bannerAtual].corDestaque} absolute inset-0 opacity-60 backdrop-blur-[1px] z-0`} />
+            )}
 
-          <p className="mx-auto mt-2 max-w-xl text-sm text-gray-400">
-            Clique na miniatura para expandir e passe o mouse na imagem para ver os detalhes em zoom.
-          </p>
+            {/* CONTEÚDO TEXTUAL */}
+            {(BANNERS[bannerAtual].titulo || BANNERS[bannerAtual].tag) && (
+              <div className="relative z-10 flex flex-col items-center text-center p-4">
+                {BANNERS[bannerAtual].tag && (
+                  <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-blue-400 border border-blue-500/20 uppercase backdrop-blur-md">
+                    {BANNERS[bannerAtual].tag}
+                  </span>
+                )}
+
+                {BANNERS[bannerAtual].titulo && (
+                  <h1 className="mt-2 text-xl font-black tracking-tight text-white md:text-2xl drop-shadow-md">
+                    {BANNERS[bannerAtual].titulo}
+                  </h1>
+                )}
+
+                {BANNERS[bannerAtual].descricao && (
+                  <p className="mt-1 max-w-lg text-xs text-gray-200 drop-shadow">
+                    {BANNERS[bannerAtual].descricao}
+                  </p>
+                )}
+
+                {BANNERS[bannerAtual].botaoTexto && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selecionarCategoria(BANNERS[bannerAtual].categoriaAlvo);
+                    }}
+                    className="mt-3.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/30"
+                  >
+                    {BANNERS[bannerAtual].botaoTexto}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* BOTÃO ANTERIOR */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setBannerAtual((prev) => (prev === 0 ? BANNERS.length - 1 : prev - 1));
+              }}
+              className="absolute left-2.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-800 bg-black/60 text-xs text-gray-300 backdrop-blur-md transition hover:bg-blue-600 hover:text-white"
+            >
+              ‹
+            </button>
+
+            {/* BOTÃO PRÓXIMO */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setBannerAtual((prev) => (prev + 1) % BANNERS.length);
+              }}
+              className="absolute right-2.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-800 bg-black/60 text-xs text-gray-300 backdrop-blur-md transition hover:bg-blue-600 hover:text-white"
+            >
+              ›
+            </button>
+
+            {/* INDICADORES (BOLINHAS) */}
+            <div className="absolute bottom-2.5 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
+              {BANNERS.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setBannerAtual(index);
+                  }}
+                  className={`h-1.5 rounded-full transition-all ${
+                    bannerAtual === index ? "w-5 bg-blue-500" : "w-1.5 bg-gray-600 hover:bg-gray-400"
+                  }`}
+                />
+              ))}
+            </div>
+
+          </div>
         </div>
       </section>
 
       {/* FILTROS E BUSCA */}
-      <section id="categorias" className="mx-auto max-w-7xl px-6 pt-6 pb-2">
-        <div className="flex flex-col-reverse gap-3 rounded-xl border border-gray-800/80 bg-gray-950/60 p-3 md:flex-row md:items-center md:justify-between">
+      <section id="categorias" className="mx-auto max-w-7xl px-6 pt-2 pb-1">
+        <div className="flex flex-col-reverse gap-3 rounded-xl border border-gray-800/80 bg-gray-950/60 p-2.5 md:flex-row md:items-center md:justify-between">
           
           <div className="flex items-center gap-2 overflow-visible pb-1 md:pb-0">
             {categorias.map((categoria) => {
@@ -263,9 +438,9 @@ export default function Home() {
       </section>
 
       {/* CATÁLOGO DE PRODUTOS */}
-      <section id="produtos" className="mx-auto max-w-7xl px-6 py-6">
+      <section id="produtos" className="mx-auto max-w-7xl px-6 pt-2 pb-6">
 
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xl font-bold tracking-tight">
             {mascoteSelecionado
               ? `Interclasses — ${mascoteSelecionado}`
@@ -310,7 +485,7 @@ export default function Home() {
 
       </section>
 
-      {/* QUADRO AMPLIADO NO CENTRO COM EFEITO DE LUPA DE ZOOM */}
+      {/* QUADRO AMPLIADO COM LUPA E COMPRA DIRETA */}
       {produtoEmDestaque && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md transition-all duration-300"
@@ -320,7 +495,6 @@ export default function Home() {
             className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl md:flex-row"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* BOTÃO FECHAR */}
             <button
               onClick={() => setProdutoEmDestaque(null)}
               className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-gray-300 backdrop-blur-md transition hover:bg-blue-600 hover:text-white"
@@ -328,7 +502,6 @@ export default function Home() {
               ✕
             </button>
 
-            {/* IMAGEM COM EFEITO DE LUPA E ZOOM MAGNÉTICO NO MOUSE */}
             <div 
               ref={imgContainerRef}
               onMouseEnter={() => setIsHovered(true)}
@@ -341,12 +514,11 @@ export default function Home() {
                 alt={produtoEmDestaque.nome}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                  transform: isHovered ? "scale(2.5)" : "scale(1)",
+                  transform: isHovered ? "scale(1.6)" : "scale(1)",
                 }}
                 className="max-h-[65vh] w-auto object-contain transition-transform duration-150 ease-out"
               />
 
-              {/* AVISO INDICADOR DE ZOOM QUANDO O CURSOR NÃO ESTÁ SOBRE A IMAGEM */}
               {!isHovered && (
                 <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-gray-700 bg-black/60 px-3 py-1 text-[11px] font-medium text-gray-300 backdrop-blur-md">
                   🔍 Passe o mouse na arte para dar zoom
@@ -354,11 +526,12 @@ export default function Home() {
               )}
             </div>
 
-            {/* PAINEL LATERAL DE COMPRA */}
             <div className="flex w-full flex-col justify-between border-t border-gray-800 bg-gray-950 p-6 md:w-80 md:border-l md:border-t-0">
               <div>
                 <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-400 border border-blue-500/20">
-                  {produtoEmDestaque.categoria}
+                  {Array.isArray(produtoEmDestaque.categoria)
+                    ? produtoEmDestaque.categoria.join(" • ")
+                    : produtoEmDestaque.categoria}
                 </span>
 
                 <h3 className="mt-3 text-xl font-extrabold text-white">
