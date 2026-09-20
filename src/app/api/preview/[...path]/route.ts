@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-// Força o Next.js a tratar esta rota como totalmente dinâmica em tempo de execução
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -17,11 +16,16 @@ export async function GET(
       return new NextResponse("Caminho inválido", { status: 400 });
     }
 
-    // O comentário /*turbopackIgnore: true*/ impede que o Turbopack tente rastrear
-    // o disco rígido inteiro durante a compilação (build).
+    // Une os segmentos em uma string relativa limpa
+    const relativePath = pathSegments.join("/");
+
+    // Define os diretórios base estaticamente sem usar o operador spread (...) dentro do path.join
+    const baseArquivos = path.join(process.cwd(), "arquivos");
+    const basePublic = path.join(process.cwd(), "public");
+
     const tentativas = [
-      path.join(process.cwd(), "arquivos", /*turbopackIgnore: true*/ ...pathSegments),
-      path.join(process.cwd(), "public", /*turbopackIgnore: true*/ ...pathSegments),
+      path.join(baseArquivos, relativePath),
+      path.join(basePublic, relativePath),
     ];
 
     let filePath = "";
