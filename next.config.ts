@@ -1,14 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Adicionado para resolver o conflito com o Turbopack na Vercel
+  turbopack: {},
+
   // Libera a requisição cross-origin para qualquer túnel do Cloudflare no Next.js
   allowedDevOrigins: [
     "*.trycloudflare.com",
     "dale-degrees-largely-spotlight.trycloudflare.com",
   ],
-  // Desativa os indicadores de dev que tentam abrir conexões HMR pelo túnel
-  devIndicators: {
-    buildActivity: false,
-  },
+
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
       // Impede o cliente de tentar reconectar o WebSocket pelo túnel da Cloudflare
