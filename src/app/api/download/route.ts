@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
-import fs from "fs";
-import path from "path";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { arquivosDownload } from "@/data/downloads";
+
+const s3 = new S3Client({
+  region: "auto",
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
 
 export async function GET(request: Request) {
   try {
@@ -9,20 +18,28 @@ export async function GET(request: Request) {
     const pedidoId = searchParams.get("pedidoId");
 
     if (!pedidoId) {
-      return NextResponse.json({ error: "Parâmetro pedidoId ausente." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Parâmetro pedidoId ausente." },
+        { status: 400 }
+      );
     }
 
     const dbUrl = process.env.DATABASE_URL;
+
     if (!dbUrl) {
-      return NextResponse.json({ error: "DATABASE_URL não configurada." }, { status: 500 });
+      return NextResponse.json(
+        { error: "DATABASE_URL não configurada." },
+        { status: 500 }
+      );
     }
 
     const sql = neon(dbUrl);
 
-    // 1. Busca o produto comprado no pedido
+    // Busca o pedido e o produto comprado
     const resultados: any = await sql`
-      SELECT 
+      SELECT
         ped.status,
+        pi.produto_id,
         pi.nome AS nome_produto
       FROM pedidos ped
       JOIN pedido_itens pi ON pi.pedido_id = ped.id
@@ -30,90 +47,95 @@ export async function GET(request: Request) {
     `;
 
     if (!resultados || resultados.length === 0) {
-      return NextResponse.json({ error: `Nenhum produto localizado no pedido #${pedidoId}.` }, { status: 404 });
-    }
-
-    const itemPedido = resultados[0];
-    const statusAtual = String(itemPedido.status).toLowerCase().trim();
-
-    // 2. Trava de segurança de pagamento aprovado
-    const statusValidos = ["pagamento_aprovado", "approved", "aprovado", "concluido", "pago"];
-    if (!statusValidos.includes(statusAtual)) {
-      return NextResponse.json({ error: `Download bloqueado. Status do pedido: ${itemPedido.status}` }, { status: 403 });
-    }
-
-    // 3. Quebra o nome do banco em palavras-chave para busca flexível
-    const nomeOriginal = String(itemPedido.nome_produto);
-    const palavrasChave = nomeOriginal
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .split(/[\s-_\/]+/)
-      .filter(palavra => palavra.length > 2 && palavra !== "por" && palavra !== "com");
-
-    // 4. VARREDURA INTELIGENTE POR APROXIMAÇÃO
-    const baseDir = "C:\\SIAC-STUDIO\\site\\arquivos\\interclasses";
-    let finalPath = "";
-
-    if (fs.existsSync(baseDir)) {
-      const categorias = fs.readdirSync(baseDir);
-
-      for (const cat of categorias) {
-        const caminhoCategoria = path.join(baseDir, cat);
-
-        if (fs.statSync(caminhoCategoria).isDirectory()) {
-          const subPastas = fs.readdirSync(caminhoCategoria);
-          
-          for (const pastaFisica of subPastas) {
-            const pastaFisicaMin = pastaFisica.toLowerCase();
-            
-            // Verifica se as palavras-chave principais existem no nome da pasta
-            const bateComAArte = palavrasChave.every(palavra => pastaFisicaMin.includes(palavra));
-
-            if (bateComAArte) {
-              const caminhoTeste = path.join(caminhoCategoria, pastaFisica, "arquivo.rar");
-              if (fs.existsSync(caminhoTeste)) {
-                finalPath = caminhoTeste;
-                break;
-              }
-            }
-          }
-        }
-        if (finalPath) break;
-      }
-    }
-
-    // LOG DE MONITORAMENTO NO SHELL
-    console.log("\n=========================================");
-    console.log(`📦 PRODUTO NO BANCO: "${nomeOriginal}"`);
-    console.log(`🔗 CAMINHO REAL LOCALIZADO:\n👉 ${finalPath || "NENHUM LUGAR (404)"}`);
-    console.log("=========================================\n");
-
-    if (!finalPath) {
       return NextResponse.json(
-        { 
-          error: "O arquivo não foi encontrado usando a busca inteligente por aproximação.", 
-          nomeNoBanco: nomeOriginal,
-          caminhoBase: baseDir
-        }, 
+        {
+          error: `Nenhum produto localizado no pedido #${pedidoId}.`,
+        },
         { status: 404 }
       );
     }
 
-    // 5. Entrega o arquivo forçando o nome padrão "arquivo.rar" no computador do cliente
-    const fileBuffer = fs.readFileSync(finalPath);
+    const itemPedido = resultados[0];
 
-    return new NextResponse(fileBuffer, {
+    // Somente pedidos pagos podem baixar
+    const statusAtual = String(itemPedido.status).toLowerCase().trim();
+
+    const statusValidos = [
+      "pagamento_aprovado",
+      "approved",
+      "aprovado",
+      "concluido",
+      "pago",
+    ];
+
+    if (!statusValidos.includes(statusAtual)) {
+      return NextResponse.json(
+        {
+          error: `Download bloqueado. Status do pedido: ${itemPedido.status}`,
+        },
+        { status: 403 }
+      );
+    }
+
+    const produtoId = Number(itemPedido.produto_id);
+    const caminhoR2 = arquivosDownload[produtoId];
+
+    if (!caminhoR2) {
+      return NextResponse.json(
+        {
+          error: "Este produto ainda não possui arquivo disponível para download.",
+          produtoId,
+          nomeProduto: itemPedido.nome_produto,
+        },
+        { status: 404 }
+      );
+    }
+
+    const bucket = process.env.R2_BUCKET_NAME;
+
+    if (!bucket) {
+      return NextResponse.json(
+        { error: "R2_BUCKET_NAME não configurado." },
+        { status: 500 }
+      );
+    }
+
+    console.log("=========================================");
+    console.log(`PEDIDO: #${pedidoId}`);
+    console.log(`PRODUTO ID: ${produtoId}`);
+    console.log(`PRODUTO: ${itemPedido.nome_produto}`);
+    console.log(`R2: ${caminhoR2}`);
+    console.log("=========================================");
+
+    const resultadoR2 = await s3.send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: caminhoR2,
+      })
+    );
+
+    if (!resultadoR2.Body) {
+      return NextResponse.json(
+        { error: "Arquivo não encontrado no R2." },
+        { status: 404 }
+      );
+    }
+
+    return new NextResponse(resultadoR2.Body.transformToWebStream(), {
       status: 200,
       headers: {
-        // Mudado aqui para travar o nome como "arquivo.rar" para o cliente
-        "Content-Disposition": `attachment; filename="arquivo.rar"`,
+        "Content-Disposition": 'attachment; filename="arquivo.rar"',
         "Content-Type": "application/x-rar-compressed",
       },
     });
-
   } catch (error: any) {
     console.error("Erro na rota de download:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: error.message || "Erro interno ao realizar download.",
+      },
+      { status: 500 }
+    );
   }
 }

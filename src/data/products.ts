@@ -223,7 +223,8 @@ export const products: Product[] = [
     downloadUrl: "/api/download/interclasses/coringa/001-coringa-gangster/arquivo.rar",
     tags: ["coringa", "gelo", "azul", "interclasses"],
   },
-  {id:22,
+  {
+    id:22,
     nome: "Coringa Gangster Light",
     categoria: "Interclasses",
     mascote: "Coringa",
