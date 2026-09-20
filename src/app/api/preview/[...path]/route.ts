@@ -16,10 +16,8 @@ export async function GET(
       return new NextResponse("Caminho inválido", { status: 400 });
     }
 
-    // Une os segmentos em uma string relativa limpa
     const relativePath = pathSegments.join("/");
 
-    // Define os diretórios base estaticamente sem usar o operador spread (...) dentro do path.join
     const baseArquivos = path.join(process.cwd(), "arquivos");
     const basePublic = path.join(process.cwd(), "public");
 
@@ -31,7 +29,8 @@ export async function GET(
     let filePath = "";
 
     for (const local of tentativas) {
-      if (fs.existsSync(local)) {
+      // Adicionado turbopackIgnore na checagem de arquivo
+      if (fs.existsSync(/*turbopackIgnore: true*/ local)) {
         filePath = local;
         break;
       }
@@ -41,7 +40,8 @@ export async function GET(
       return new NextResponse("Imagem não encontrada", { status: 404 });
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
+    // Adicionado turbopackIgnore na leitura do arquivo
+    const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ filePath);
 
     if (fileBuffer.length === 0) {
       return new NextResponse("Imagem vazia", { status: 404 });
