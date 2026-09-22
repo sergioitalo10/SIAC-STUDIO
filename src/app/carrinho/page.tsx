@@ -140,7 +140,7 @@ export default function CartPage() {
                       </p>
 
                       <button
-                        onClick={() => removeFromCart(product.id)}
+                        onClick={() => product.id != null && removeFromCart(product.id)}
                         className="mt-0 text-sm text-red-400 transition hover:text-red-300 sm:mt-3"
                       >
                         Remover

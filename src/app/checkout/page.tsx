@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import type { Order } from "@/types/order";
+import type { DesignerProduct } from "@/types/designer";
+import type { Product } from "@/data/products";
 import { createOrder } from "@/lib/orders";
 
 export default function CheckoutPage() {
@@ -51,12 +53,21 @@ export default function CheckoutPage() {
 
   const numeroPedido = `SIAC-${Date.now()}`;
 
-  // Extraindo informações de designer dos produtos (se houver)
-  const produtosComDesigner = cart.map((p) => ({
-    ...p,
-    designerArtworkId: p.designerArtworkId ?? null,
-    designerId: p.designerId ?? null,
-    designerNome: p.designerNome ?? null,
+  // Converte o carrinho para o formato do pedido (Product[])
+  const produtosAsProduct: Product[] = cart.map((p: Product | DesignerProduct) => ({
+    id: p.id ?? 0,
+    nome: p.nome ?? "",
+    categoria: p.categoria ?? "Outros",
+    preco: p.preco ?? 0,
+    imagem: p.imagem ?? "",
+    ...(p as any).descricao !== undefined && { descricao: (p as any).descricao },
+    ...(p as any).formato !== undefined && { formato: (p as any).formato },
+    ...(p as any).tamanho !== undefined && { tamanho: (p as any).tamanho },
+    ...(p as any).mascote !== undefined && { mascote: (p as any).mascote },
+    ...(p as any).tags !== undefined && { tags: (p as any).tags },
+    designerId: p.designerId ?? undefined,
+    designerNome: p.designerNome ?? undefined,
+    designerArtworkId: p.designerArtworkId ?? undefined,
   }));
 
   const novoPedido: Order = {
@@ -67,7 +78,7 @@ export default function CheckoutPage() {
       email: email.trim(),
       whatsapp: whatsapp.trim(),
     },
-    produtos: produtosComDesigner,
+    produtos: produtosAsProduct,
     total,
     status: "aguardando_pagamento",
   };

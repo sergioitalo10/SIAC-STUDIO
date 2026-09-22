@@ -164,23 +164,26 @@ export default function Home() {
   }
 
   function handleComprarAgora(product: Product | DesignerProduct) {
-    // Para produtos de designer, mapeia os campos para o formato do carrinho
-    if ("designer_id" in product) {
-      const d = product as DesignerProduct;
-      addToCart({
-        ...d,
-        id: d.artwork_id,
-        nome: d.titulo,
-        imagem: d.thumbnail_url ?? d.imagem_url ?? "",
-        downloadUrl: d.arquivo_url,
-        designerId: d.designer_id,
-        designerNome: d.designer_nome,
-        designerArtworkId: d.artwork_id,
-      });
-    } else {
-      addToCart(product);
-    }
-    setProdutoEmDestaque(null);
+  // Para produtos de designer, mapeia os campos para o formato do carrinho
+  if ("designer_id" in product) {
+    const d = product as DesignerProduct;
+    const mappedProduct: Product = {
+      id: d.artwork_id,
+      nome: d.titulo,
+      descricao: d.descricao === null ? undefined : d.descricao,
+      categoria: d.categoria ?? "",
+      preco: d.preco,
+      imagem: d.thumbnail_url ?? d.imagem_url ?? "",
+      downloadUrl: d.arquivo_url ?? undefined,
+      designerId: d.designer_id,
+      designerNome: d.designer_nome ?? undefined,
+      designerArtworkId: d.artwork_id,
+    };
+    addToCart(mappedProduct);
+  } else {
+    addToCart(product);
+  }
+  setProdutoEmDestaque(null);
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
