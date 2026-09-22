@@ -36,7 +36,7 @@ export default function SubmitPage() {
     setDesigner(JSON.parse(sessao));
 
     // Se estiver editando, carrega os dados
-    if (editId) {
+    if (editId && designer) {
       fetch(`/api/designer/artworks?designer_id=${designer.id}`)
         .then((r) => r.json())
         .then((data) => {

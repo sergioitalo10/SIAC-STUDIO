@@ -46,6 +46,7 @@ export default function Home() {
   const [busca, setBusca] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todas");
   const [mascoteSelecionado, setMascoteSelecionado] = useState<string | null>(null);
+  const [produtoEmDestaque, setProdutoEmDestaque] = useState<Product | DesignerProduct | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
   const [usuario, setUsuario] = useState<{ id: number; nome: string; email: string } | null>(null);
 
@@ -164,16 +165,21 @@ export default function Home() {
 
   function handleComprarAgora(product: Product | DesignerProduct) {
     // Para produtos de designer, mapeia os campos para o formato do carrinho
-    const item: Product | DesignerProduct = "designer_id" in product
-      ? {
-          ...product,
-          id: product.artwork_id ?? product.id ?? 0,
-          designerArtworkId: product.artwork_id ?? null,
-          designerId: product.designer_id ?? null,
-          designerNome: product.designer_nome ?? null,
-        }
-      : product;
-    addToCart(item);
+    if ("designer_id" in product) {
+      const d = product as DesignerProduct;
+      addToCart({
+        ...d,
+        id: d.artwork_id,
+        nome: d.titulo,
+        imagem: d.thumbnail_url ?? d.imagem_url ?? "",
+        downloadUrl: d.arquivo_url,
+        designerId: d.designer_id,
+        designerNome: d.designer_nome,
+        designerArtworkId: d.artwork_id,
+      });
+    } else {
+      addToCart(product);
+    }
     setProdutoEmDestaque(null);
   }
 
@@ -648,18 +654,18 @@ export default function Home() {
             {designerProducts.map((product) => (
               <div
                 key={`designer-${product.artwork_id}`}
-                onClick={() => setProdutoEmDestaque(product as any)}
+                onClick={() => setProdutoEmDestaque(product)}
                 className="cursor-pointer transition transform hover:scale-[1.02]"
               >
                 <ProductCard
                   id={product.artwork_id}
-                  nome={product.titulo}
-                  categoria={product.categoria}
-                  preco={Number(product.preco)}
+                  nome={product.titulo ?? ""}
+                  categoria={product.categoria ?? "Outros"}
+                  preco={Number(product.preco) || 0}
                   imagem={product.thumbnail_url || product.imagem_url || ""}
                 />
                 <p className="mt-1 text-[10px] text-gray-500 text-center truncate">
-                  por {product.designer_nome}
+                  por {product.designer_nome ?? ""}
                 </p>
               </div>
             ))}

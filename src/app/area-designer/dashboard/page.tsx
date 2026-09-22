@@ -49,28 +49,31 @@ export default function DashboardPage() {
     }
 
     try {
-      setDesigner(JSON.parse(sessao));
+      const parsed: Designer | null = JSON.parse(sessao);
+      setDesigner(parsed);
+      // Carrega artworks e earnings apenas se designer for válido
+      if (parsed && parsed.id) {
+        Promise.all([
+          fetch(`/api/designer/artworks?designer_id=${parsed.id}`)
+            .then((r) => r.json())
+            .catch(() => ({ artworks: [] })),
+          fetch(`/api/designer/earnings?designer_id=${parsed.id}`)
+            .then((r) => r.json())
+            .catch(() => ({ earnings: [], total_comissao: 0 })),
+        ])
+          .then(([artData, earnData]) => {
+            setArtworks(artData.artworks || []);
+            setEarnings(earnData.earnings || []);
+            setTotalComissao(earnData.total_comissao || 0);
+          })
+          .catch(() => setErro("Erro ao carregar dados"))
+          .finally(() => setLoading(false));
+      } else {
+        router.push("/area-designer");
+      }
     } catch {
       router.push("/area-designer");
-      return;
     }
-
-    // Carrega artworks e earnings
-    Promise.all([
-      fetch(`/api/designer/artworks?designer_id=${designer.id}`)
-        .then((r) => r.json())
-        .catch(() => ({ artworks: [] })),
-      fetch(`/api/designer/earnings?designer_id=${designer.id}`)
-        .then((r) => r.json())
-        .catch(() => ({ earnings: [], total_comissao: 0 })),
-    ])
-      .then(([artData, earnData]) => {
-        setArtworks(artData.artworks || []);
-        setEarnings(earnData.earnings || []);
-        setTotalComissao(earnData.total_comissao || 0);
-      })
-      .catch(() => setErro("Erro ao carregar dados"))
-      .finally(() => setLoading(false));
   }, [router]);
 
   const artPending = artworks.filter((a) => a.status === "pending").length;

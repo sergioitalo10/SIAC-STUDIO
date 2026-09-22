@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       ok: true,
       earning_id: result[0].id,
       designer_id: designerId,
-      valor_comissao,
+      valorComissao,
     });
   } catch (error: any) {
     console.error("Erro ao criar earning:", error);

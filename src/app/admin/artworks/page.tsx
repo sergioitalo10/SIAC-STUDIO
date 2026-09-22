@@ -63,7 +63,7 @@ export default function AdminArtworksPage() {
                 status: acao === "approve" ? "approved" : "rejected",
                 aprovado_em: acao === "approve" ? new Date().toISOString() : a.aprovado_em,
                 rejeitado_em: acao === "reject" ? new Date().toISOString() : a.rejeitado_em,
-                observacoes: acao === "reject" ? observacoes : a.observacoes,
+                observacoes: acao === "reject" ? (observacoes ?? a.observacoes) : a.observacoes,
               }
             : a
         )

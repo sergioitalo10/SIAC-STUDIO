@@ -47,12 +47,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function addToCart(product: Product | DesignerProduct) {
     setCart((currentCart) => {
-      // Garante que product.id existe antes de usar
-      const productId = product.id ?? product.artwork_id;
+      const productId: number | undefined =
+        'artwork_id' in product ? product.artwork_id : product.id;
       if (productId == null) return currentCart;
 
       const existingProduct = currentCart.find(
-        (item) => (item.id ?? item.artwork_id) === productId
+        (item) =>
+          ('artwork_id' in item ? item.artwork_id : item.id) === productId
       );
 
       if (existingProduct) {
@@ -66,7 +67,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   function removeFromCart(productId: number) {
     setCart((currentCart) =>
       currentCart.filter(
-        (product) => (product.id ?? product.artwork_id) === productId
+        (product) =>
+          ('artwork_id' in product ? product.artwork_id : product.id) === productId
       )
     );
   }
