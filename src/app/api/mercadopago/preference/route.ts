@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   console.log("--> ROTA PREFERENCE CHAMADA (SIAC STUDIO)");
 
   // Token fixado diretamente para isolar qualquer problema de leitura do ambiente
-  const accessToken = "APP_USR-7622554073337882-083013-0f65bb5b5f930d79e89d460014350852-3653350684"; 
+  const accessToken = "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059"; 
   console.log("--> TOKEN MP EXISTE?:", !!accessToken);
 
   try {

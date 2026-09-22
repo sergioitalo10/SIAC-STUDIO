@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
   try {
     // FORÇA OS DADOS DIRETAMENTE PARA EVITAR FALHA DE AMBIENTE NO WINDOWS
-    const accessToken = "APP_USR-7622554073337882-083013-0f65bb5b5f930d79e89d460014350852-3653350684".trim();
+    const accessToken = "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059".trim();
     const dbUrl = "postgresql://neondb_owner:npg_P1qLkwo7RIFu@ep-dry-brook-a5tstzox-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require".trim();
 
     // (Se preferir manter o process.env, cole suas strings reais naspas acima)
