@@ -11,6 +11,11 @@ export interface Product {
   descricao?: string;
   formato?: string;
   tamanho?: string;
+
+  // Campos para produtos de designers colaboradores
+  designerId?: number;
+  designerNome?: string;
+  designerArtworkId?: number;
 }
 
 export const products: Product[] = [

@@ -5,6 +5,7 @@ import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import CartButton from "@/components/CartButton";
 import { products, Product } from "@/data/products";
+import type { DesignerProduct } from "@/types/designer";
 import { useCart } from "@/context/CartContext";
 
 // DADOS DOS BANNERS ROTATIVOS (CARROSSEL)
@@ -53,7 +54,19 @@ export default function Home() {
   const [pausarRotacao, setPausarRotacao] = useState(false);
 
   // ESTADO DO QUADRO DE PREVIEW & COMPRA NO CENTRO DA TELA
-  const [produtoEmDestaque, setProdutoEmDestaque] = useState<Product | null>(null);
+  // Carrega produtos de designers aprovados
+  const [designerProducts, setDesignerProducts] = useState<DesignerProduct[]>([]);
+  const [loadingDesignerProducts, setLoadingDesignerProducts] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/designer/approved")
+      .then((res) => res.json())
+      .then((data) => {
+        setDesignerProducts(data.artworks || []);
+      })
+      .catch((err) => console.error("Erro ao carregar designer products:", err))
+      .finally(() => setLoadingDesignerProducts(false));
+  }, []);
 
   // ESTADOS E REF PARA O EFEITO DE ZOOM
   const [isHovered, setIsHovered] = useState(false);
@@ -149,7 +162,7 @@ export default function Home() {
     }
   }
 
-  function handleComprarAgora(product: Product) {
+  function handleComprarAgora(product: Product | DesignerProduct) {
     addToCart(product);
     setProdutoEmDestaque(null);
   }
@@ -543,6 +556,17 @@ export default function Home() {
                 </p>
 
                 <div className="mt-4 space-y-2 text-xs text-gray-400 border-t border-gray-800/80 pt-4">
+                  {produtoEmDestaque.designerNome && (
+                    <>
+                      <p className="flex items-center gap-2">
+                        <span className="text-blue-400">✍</span>
+                        Artista: <span className="text-white font-normal">{produtoEmDestaque.designerNome}</span>
+                      </p>
+                      <p className="flex items-center gap-2 text-blue-400">
+                        40% para o designer • 60% para o SIAC STUDIO
+                      </p>
+                    </>
+                  )}
                   <p className="flex items-center gap-2">
                     <span className="text-blue-400">✓</span> Arquivo 100% Vetorizado
                   </p>
@@ -574,6 +598,64 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* SEÇÃO: ARTES DOS COLABORADORES */}
+      <section className="mx-auto max-w-7xl px-6 pb-8">
+        <div className="mb-6 flex items-center justify-between border-t border-gray-800 pt-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500">
+              SIAC STUDIO
+            </p>
+            <h2 className="mt-2 text-2xl font-bold">Artes dos Colaboradores</h2>
+            <p className="mt-1 text-xs text-gray-400">
+              Produtos criados por designers parceiros — 40% da venda vai para o designer.
+            </p>
+          </div>
+          <span className="text-xs text-gray-500">
+            {loadingDesignerProducts
+              ? "Carregando..."
+              : designerProducts.length === 0
+              ? "Nenhuma arte publicada ainda"
+              : `${designerProducts.length} artes disponíveis`}
+          </span>
+        </div>
+
+        {loadingDesignerProducts ? (
+          <div className="flex justify-center py-12 text-gray-500 text-sm">
+            Carregando artes dos colaboradores...
+          </div>
+        ) : designerProducts.length === 0 ? (
+          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-10 text-center">
+            <div className="text-5xl mb-4">🎨</div>
+            <h3 className="text-xl font-bold text-white">Ainda não há artes publicadas</h3>
+            <p className="mt-2 text-sm text-gray-400 max-w-md mx-auto">
+              Enquanto não houver designers cadastrados enviando e aprovando artes,
+              esta seção permanecerá vazia. Os primeiros colaboradores estarão disponíveis em breve.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {designerProducts.map((product) => (
+              <div
+                key={`designer-${product.artwork_id}`}
+                onClick={() => setProdutoEmDestaque(product as any)}
+                className="cursor-pointer transition transform hover:scale-[1.02]"
+              >
+                <ProductCard
+                  id={product.artwork_id}
+                  nome={product.titulo}
+                  categoria={product.categoria}
+                  preco={Number(product.preco)}
+                  imagem={product.thumbnail_url || product.imagem_url || ""}
+                />
+                <p className="mt-1 text-[10px] text-gray-500 text-center truncate">
+                  por {product.designer_nome}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* RODAPÉ */}
       <section id="destaques" className="border-t border-gray-900 bg-gray-950/50">

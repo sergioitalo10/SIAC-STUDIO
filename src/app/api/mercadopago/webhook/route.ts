@@ -6,11 +6,9 @@ export async function POST(request: Request) {
   console.log("--> WEBHOOK MERCADO PAGO RECEBIDO");
 
   try {
-    // FORÇA OS DADOS DIRETAMENTE PARA EVITAR FALHA DE AMBIENTE NO WINDOWS
-    const accessToken = "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059".trim();
-    const dbUrl = "postgresql://neondb_owner:npg_P1qLkwo7RIFu@ep-dry-brook-a5tstzox-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require".trim();
-
-    // (Se preferir manter o process.env, cole suas strings reais naspas acima)
+    // Lê a DATABASE_URL de ambiente (ou mantém o fallback hardcoded para desenvolvimento local)
+    const dbUrl = (process.env.DATABASE_URL || "").trim()
+      || "postgresql://neondb_owner:5HQh5Y6ZkcUv@ep-cool-darkness-a2j6x0xh.westus2.azure.neon.tech/siac-studio?sslmode=require";
 
     if (!accessToken || !dbUrl) {
       console.error("ERRO WEBHOOK: Variáveis de ambiente não configuradas.");
@@ -56,6 +54,56 @@ export async function POST(request: Request) {
         `;
 
         console.log(`✅ PEDIDO #${pedidoId} ATUALIZADO PARA 'pago' COM SUCESSO!`);
+
+        // Registrar earnings dos designers (40% por venda)
+        const itensComDesigner: any[] = await sql`
+          SELECT
+            pi.id,
+            pi.designer_artwork_id,
+            pi.designer_id,
+            pi.designer_nome,
+            pi.preco,
+            da.preco as preco_artwork
+          FROM pedido_itens pi
+          LEFT JOIN designer_artworks da ON da.id = pi.designer_artwork_id
+          WHERE pi.pedido_id = ${Number(pedidoId)}
+            AND pi.designer_artwork_id IS NOT NULL
+        `;
+
+        for (const item of itensComDesigner) {
+          const designerId = item.designer_id;
+          const designerArtworkId = item.designer_artwork_id;
+          const precoVenda = item.preco || item.preco_artwork || 0;
+          const comissao = Number(precoVenda) * 0.4;
+
+          if (designerId) {
+            const existing: any[] = await sql`
+              SELECT id FROM designer_earnings
+              WHERE pedido_id = ${Number(pedidoId)}
+                AND designer_artwork_id = ${Number(designerArtworkId)}
+            `;
+
+            if (existing.length === 0) {
+              await sql`
+                INSERT INTO designer_earnings (
+                  pedido_id, designer_artwork_id, designer_id,
+                  valor_venda, valor_comissao, status
+                )
+                VALUES (
+                  ${Number(pedidoId)},
+                  ${Number(designerArtworkId)},
+                  ${Number(designerId)},
+                  ${Number(precoVenda)},
+                  ${comissao},
+                  'pago'
+                )
+              `;
+              console.log(
+                `✅ EARNING registrado: pedido #${pedidoId}, designer_id=${designerId}, comissao=R$ ${comissao.toFixed(2)}`
+              );
+            }
+          }
+        }
       }
     }
 

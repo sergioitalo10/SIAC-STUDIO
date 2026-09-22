@@ -51,6 +51,14 @@ export default function CheckoutPage() {
 
   const numeroPedido = `SIAC-${Date.now()}`;
 
+  // Extraindo informações de designer dos produtos (se houver)
+  const produtosComDesigner = cart.map((p) => ({
+    ...p,
+    designerArtworkId: p.designerArtworkId ?? null,
+    designerId: p.designerId ?? null,
+    designerNome: p.designerNome ?? null,
+  }));
+
   const novoPedido: Order = {
     id: numeroPedido,
     data: new Date().toISOString(),
@@ -59,7 +67,7 @@ export default function CheckoutPage() {
       email: email.trim(),
       whatsapp: whatsapp.trim(),
     },
-    produtos: cart,
+    produtos: produtosComDesigner,
     total,
     status: "aguardando_pagamento",
   };

@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   console.log("--> ROTA PREFERENCE CHAMADA (SIAC STUDIO)");
 
   // Token fixado diretamente para isolar qualquer problema de leitura do ambiente
-  const accessToken = "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059"; 
+  const accessToken = "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059";
   console.log("--> TOKEN MP EXISTE?:", !!accessToken);
 
   try {
@@ -25,8 +25,7 @@ export async function POST(request: Request) {
 
     const sql = neon(dbUrl);
 
-    // 1. Garante as tabelas no banco Neon (unificadas com nome e arquivo)
-    // 1. Garante as tabelas e colunas necessárias no banco Neon
+    // 1. Garante as tabelas no banco Neon
     await sql`
       CREATE TABLE IF NOT EXISTS pedidos (
         id SERIAL PRIMARY KEY,
@@ -48,19 +47,35 @@ export async function POST(request: Request) {
       );
     `;
 
-    // Garante que a coluna 'nome' exista caso a tabela já tenha sido criada antes sem ela
+    // Garante que as colunas extras existam
     await sql`
-      ALTER TABLE pedido_itens ADD COLUMN IF NOT EXISTS nome VARCHAR(255);
+      ALTER TABLE pedido_itens ADD COLUMN IF NOT EXISTS nome VARCHAR(255)
+    `;
+
+    await sql`
+      ALTER TABLE pedido_itens ADD COLUMN IF NOT EXISTS designer_artwork_id INT
+    `;
+
+    await sql`
+      ALTER TABLE pedido_itens ADD COLUMN IF NOT EXISTS designer_id INT
+    `;
+
+    await sql`
+      ALTER TABLE pedido_itens ADD COLUMN IF NOT EXISTS designer_nome VARCHAR(255)
     `;
 
     const body = await request.json();
 
     const email = body.email || body.pedido?.cliente?.email;
     const nome = body.nome || body.pedido?.cliente?.nome || email?.split("@")[0] || "Cliente SIAC";
-    
+
     let produtos = [];
     if (body.produtoId && body.titulo && body.preco) {
-      produtos = [{ id: body.produtoId, nome: body.titulo, preco: body.preco }];
+      produtos = [{
+        id: body.produtoId,
+        nome: body.titulo,
+        preco: body.preco,
+      }];
     } else if (body.pedido?.produtos) {
       produtos = body.pedido.produtos;
     }
@@ -73,14 +88,14 @@ export async function POST(request: Request) {
     }
 
     const total = produtos.reduce(
-      (acc: number, item: any) => acc + Number(item.preco),
+      (acc: number, item: any) => acc + Number(item.preco || 0),
       0
     );
 
     console.log("--> INSERINDO PEDIDO NO NEON...");
     const resPedido: any = await sql`
-      INSERT INTO pedidos (cliente, email, total, status) 
-      VALUES (${nome}, ${email}, ${total}, 'pendente') 
+      INSERT INTO pedidos (cliente, email, total, status)
+      VALUES (${nome}, ${email}, ${total}, 'pendente')
       RETURNING id
     `;
 
@@ -90,8 +105,20 @@ export async function POST(request: Request) {
     console.log("--> INSERINDO ITENS DO PEDIDO...");
     for (const item of produtos) {
       await sql`
-        INSERT INTO pedido_itens (pedido_id, produto_id, nome, quantidade, preco) 
-        VALUES (${novoPedidoId}, ${Number(item.id)}, ${String(item.nome)}, 1, ${Number(item.preco)})
+        INSERT INTO pedido_itens (
+          pedido_id, produto_id, nome, quantidade, preco,
+          designer_artwork_id, designer_id, designer_nome
+        )
+        VALUES (
+          ${novoPedidoId},
+          ${Number(item.id)},
+          ${String(item.nome || "")} ,
+          1,
+          ${Number(item.preco || 0)},
+          ${item.designerArtworkId ? Number(item.designerArtworkId) : null},
+          ${item.designerId ? Number(item.designerId) : null},
+          ${item.designerNome ? String(item.designerNome) : null}
+        )
       `;
     }
 

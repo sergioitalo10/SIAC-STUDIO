@@ -9,10 +9,11 @@ import {
 } from "react";
 
 import { Product } from "@/data/products";
+import type { DesignerProduct } from "@/types/designer";
 
 type CartContextType = {
-  cart: Product[];
-  addToCart: (product: Product) => void;
+  cart: (Product | DesignerProduct)[];
+  addToCart: (product: Product | DesignerProduct) => void;
   removeFromCart: (productId: number) => void;
   clearCart: () => void;
 };
@@ -22,7 +23,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = "siac-studio-cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<(Product | DesignerProduct)[]>([]);
 
   useEffect(() => {
     try {
@@ -44,7 +45,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cart]);
 
-  function addToCart(product: Product) {
+  function addToCart(product: Product | DesignerProduct) {
     setCart((currentCart) => {
       const existingProduct = currentCart.find(
         (item) => item.id === product.id
