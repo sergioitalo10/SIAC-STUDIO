@@ -57,6 +57,9 @@ export async function GET(request: Request) {
 
     const itemPedido = resultados[0];
 
+    // Verifica se é uma compra de designer (tem designer_artwork_id)
+    const temDesigner = itemPedido.designer_artwork_id != null;
+
     // Somente pedidos pagos podem baixar
     const statusAtual = String(itemPedido.status).toLowerCase().trim();
 
@@ -75,6 +78,32 @@ export async function GET(request: Request) {
         },
         { status: 403 }
       );
+    }
+
+    if (temDesigner && itemPedido.designer_artwork_id) {
+      // Compra de designer: busca o arquivo_url direto na tabela designer_artworks
+      const artworkUrl: any[] = await sql`
+        SELECT arquivo_url FROM designer_artworks
+        WHERE id = ${Number(itemPedido.designer_artwork_id)}
+      `;
+
+      if (artworkUrl.length === 0 || !artworkUrl[0].arquivo_url) {
+        return NextResponse.json(
+          {
+            error: "Arquivo de designer não encontrado.",
+            designerArtworkId: itemPedido.designer_artwork_id,
+          },
+          { status: 404 }
+        );
+      }
+
+      // Download direto do URL do arquivo de designer (redireciona)
+      return new NextResponse(null, {
+        status: 302,
+        headers: {
+          Location: artworkUrl[0].arquivo_url,
+        },
+      });
     }
 
     const produtoId = Number(itemPedido.produto_id);

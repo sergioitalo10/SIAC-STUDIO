@@ -6,9 +6,13 @@ export async function POST(request: Request) {
   console.log("--> WEBHOOK MERCADO PAGO RECEBIDO");
 
   try {
-    // Lê a DATABASE_URL de ambiente (ou mantém o fallback hardcoded para desenvolvimento local)
+    // Lê credenciais de ambiente (ou fallback hardcoded para desenvolvimento local)
+    const accessToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || "").trim()
+      || "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059";
+
+    // Lê a DATABASE_URL de ambiente
     const dbUrl = (process.env.DATABASE_URL || "").trim()
-      || "postgresql://neondb_owner:5HQh5Y6ZkcUv@ep-cool-darkness-a2j6x0xh.westus2.azure.neon.tech/siac-studio?sslmode=require";
+      || "postgresql://neondb_owner:***@ep-cool-darkness-a2j6x0xh.westus2.azure.neon.tech/siac-studio?sslmode=require";
 
     if (!accessToken || !dbUrl) {
       console.error("ERRO WEBHOOK: Variáveis de ambiente não configuradas.");

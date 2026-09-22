@@ -163,7 +163,17 @@ export default function Home() {
   }
 
   function handleComprarAgora(product: Product | DesignerProduct) {
-    addToCart(product);
+    // Para produtos de designer, mapeia os campos para o formato do carrinho
+    const item: Product | DesignerProduct = "designer_id" in product
+      ? {
+          ...product,
+          id: product.artwork_id ?? product.id ?? 0,
+          designerArtworkId: product.artwork_id ?? null,
+          designerId: product.designer_id ?? null,
+          designerNome: product.designer_nome ?? null,
+        }
+      : product;
+    addToCart(item);
     setProdutoEmDestaque(null);
   }
 
