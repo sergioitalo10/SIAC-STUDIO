@@ -49,6 +49,5 @@ dist/
 
 # Ignorar os arquivos compactados pesados de estampas
 *.rar
-!public/gabarito/gabarito-siax-studio.rar
 arquivos/interclasses/**/*.rar
 downloads/**/*.rar
