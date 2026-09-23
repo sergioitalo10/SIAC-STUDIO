@@ -253,6 +253,12 @@ export default function Home() {
                   Entrar
                 </Link>
                 <Link
+                  href="/area-designer"
+                  className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-purple-500 shadow-md shadow-purple-600/20"
+                >
+                  Área do Designer
+                </Link>
+                <Link
                   href="/minha-conta"
                   className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/20"
                 >
