@@ -2,12 +2,53 @@ import Link from "next/link";
 import { products } from "@/data/products";
 import AddToCartButton from "@/components/AddToCartButton";
 import CartButton from "@/components/CartButton";
+import type { Metadata } from "next";
 
 type ProductPageProps = {
   params: Promise<{
     id: string;
   }>;
 };
+
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const product = products.find((item) => item.id === Number(id));
+
+  if (!product || !product.descricao) {
+    return {
+      title: "Produto não encontrado | SIAC STUDIO",
+      description: "Este produto não está disponível no momento.",
+    };
+  }
+
+  return {
+    title: `${product.nome} — Arte para Sublimação | SIAC STUDIO`,
+    description: `${product.nome} (${product.categoria}): ${product.descricao.substring(0, 160)}. Arquivo digital disponível para download imediato após pagamento.`,
+    openGraph: {
+      type: "website",
+      locale: "pt_BR",
+      title: `${product.nome} — SIAC STUDIO`,
+      description: `${product.nome} — Arte 100% vetorizada para sublimação. ${product.descricao.substring(0, 155)}.`,
+      images: [
+        {
+          url: product.imagem,
+          width: 1200,
+          height: 1200,
+          alt: product.nome,
+        },
+      ],
+      siteName: "SIAC STUDIO",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.nome} — SIAC STUDIO`,
+      description: `Arte 100% vetorizada para sublimação — ${product.nome}.`,
+      images: [product.imagem],
+    },
+  };
+}
 
 export default async function ProductPage({
   params,

@@ -1,0 +1,107 @@
+model Produto {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  preco     Float
+  imagem    String?
+  arquivo   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("produtos")
+}
+
+model Pedido {
+  id          Int      @id @default(autoincrement())
+  mpPaymentId String   @default("")
+  cliente     String
+  email       String
+  total       Float
+  status      String   @default("pendente")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  itens PedidoItem[]
+
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id         Int   @id @default(autoincrement())
+  pedidoId   Int
+  produtoId  Int
+  quantidade Int
+  preco      Float
+
+  pedido   Pedido @relation(fields: [pedidoId], references: [id])
+  designer_artwork_id Int?
+  designer_id Int?
+  designer_nome String?
+
+  @@map("pedido_itens")
+}
+
+model Designers {
+  id              Int    @id @default(autoincrement())
+  nome            String
+  email           String @unique
+  senha           String
+  pix_key         String?
+  criado_em       DateTime @default(now())
+  blacklist_reason String?
+  blacklisted_at  DateTime?
+
+  @@map("designers")
+}
+
+model DesignerArtworks {
+  id            Int      @id @default(autoincrement())
+  designer_id   Int
+  titulo        String
+  descricao     String?
+  categoria     String?
+  preco         Float
+  imagem_url    String?
+  arquivo_url   String?
+  thumbnail_url String?
+  tags          String?  @db.Text
+  status        String   @default("pending")
+  observacoes   String?
+  aprovado_em   DateTime?
+  rejeitado_em  DateTime?
+  criado_em     DateTime @default(now())
+
+  designer   Designers @relation(fields: [designer_id], references: [id])
+  earnings   DesignerEarnings[]
+
+  @@map("designer_artworks")
+}
+
+model DesignerEarnings {
+  id               Int      @id @default(autoincrement())
+  pedido_id        Int
+  designer_artwork_id Int
+  designer_id      Int
+  valor_venda      Float
+  valor_comissao   Float
+  status           String   @default("pendente")
+  criado_em        DateTime @default(now())
+
+  artwork   DesignerArtworks @relation(fields: [designer_artwork_id], references: [id])
+  designer  Designers        @relation(fields: [designer_id], references: [id])
+  payouts   DesignerPayout[]
+
+  @@map("designer_earnings")
+}
+
+model DesignerPayout {
+  id           Int      @id @default(autoincrement())
+  earning_id   Int
+  mp_payment_id String?
+  valor        Float
+  status       String   @default("pendente")
+  criado_em    DateTime @default(now())
+
+  earning DesignerEarnings @relation(fields: [earning_id], references: [id])
+
+  @@map("designer_payouts")
+}

@@ -7,11 +7,9 @@ export async function POST(request: Request) {
   console.log("--> WEBHOOK MERCADO PAGO RECEBIDO");
 
   try {
-    // Lê credenciais de ambiente (ou fallback hardcoded para desenvolvimento local)
     const accessToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || "").trim()
       || "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059";
 
-    // Lê a DATABASE_URL de ambiente
     const dbUrl = (process.env.DATABASE_URL || "").trim()
       || "postgresql://neondb_owner:***@ep-cool-darkness-a2j6x0xh.westus2.azure.neon.tech/siac-studio?sslmode=require";
 
@@ -20,38 +18,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Configuração ausente" }, { status: 500 });
     }
 
-    // Capta os parâmetros enviados na URL da notificação ou no corpo JSON
     const { searchParams } = new URL(request.url);
     const body = await request.json().catch(() => ({}));
 
-    // O Mercado Pago pode enviar o id do pagamento como 'data.id' ou 'id' no query param / body
     const topic = searchParams.get("topic") || searchParams.get("type") || body.type || body.topic;
     const paymentId = searchParams.get("data.id") || body.data?.id || searchParams.get("id") || body.id;
 
     console.log(`--> TIPO DE NOTIFICAÇÃO: ${topic} | PAYMENT ID: ${paymentId}`);
 
-    // Só processa se a notificação for do tipo "payment" (pagamento)
     if (topic === "payment" || (paymentId && !topic)) {
       if (!paymentId) {
         return NextResponse.json({ ok: true, message: "ID de pagamento não informado" });
       }
 
-      // Inicializa SDK do Mercado Pago para buscar o status atualizado do pagamento
       const client = new MercadoPagoConfig({ accessToken });
       const payment = new Payment(client);
-
-      // Busca os detalhes do pagamento diretamente nos servidores do Mercado Pago
       const paymentData = await payment.get({ id: paymentId });
 
-      const statusPagamento = paymentData.status; // ex: 'approved', 'pending', 'rejected'
-      const pedidoId = paymentData.external_reference; // O ID do pedido gravado no banco Neon
+      const statusPagamento = paymentData.status;
+      const pedidoId = paymentData.external_reference;
 
       console.log(`--> PEDIDO #${pedidoId} | STATUS MP: ${statusPagamento}`);
 
       if (statusPagamento === "approved" && pedidoId) {
         const sql = neon(dbUrl);
 
-        // Atualiza o status na tabela do banco Neon para liberar o download do .RAR
         await sql`
           UPDATE pedidos
           SET status = 'pago'
@@ -60,7 +51,7 @@ export async function POST(request: Request) {
 
         console.log(`✅ PEDIDO #${pedidoId} ATUALIZADO PARA 'pago' COM SUCESSO!`);
 
-        // Registrar earnings dos designers (40% por venda)
+        // Registrar earnings dos designers (40% por venda) — status pendente para fluxo de payout
         const itensComDesigner: any[] = await sql`
           SELECT
             pi.id,
@@ -100,14 +91,13 @@ export async function POST(request: Request) {
                   ${Number(designerId)},
                   ${Number(precoVenda)},
                   ${comissao},
-                  'pago'
+                  'pendente'
                 )
               `;
               console.log(
                 `✅ EARNING registrado: pedido #${pedidoId}, designer_id=${designerId}, comissao=R$ ${comissao.toFixed(2)}`
               );
 
-              // Envia e-mail de notificação para o designer
               await sendDesignerSaleNotification(
                 item.designer_email || "",
                 item.designer_nome || "Designer",
@@ -123,16 +113,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // Retorna HTTP 200 OK para o Mercado Pago não tentar reenviar a mesma notificação
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error: any) {
     console.error("EXCEÇÃO NO WEBHOOK DO MERCADO PAGO:", error);
-    // Retorna HTTP 200 para evitar retentativas em loop do MP em caso de erros de parse
     return NextResponse.json({ ok: true, error: error?.message }, { status: 200 });
   }
 }
 
-// Suporte a verificações de ping (GET) enviadas pelo Mercado Pago
 export async function GET() {
   return NextResponse.json({ status: "Webhook SIAC STUDIO Online" });
 }

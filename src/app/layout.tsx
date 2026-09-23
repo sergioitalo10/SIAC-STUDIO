@@ -23,15 +23,18 @@ export const metadata: Metadata = {
   keywords: [
     "artes para sublimação",
     "sublimação",
-    "CDR",
-    "PNG",
+    "arquivo CDR",
+    "arquivo PNG",
     "vetorizado",
     "mascote",
     "estamparia",
     "produtos personalizados",
+    "sublimar",
+    "transfer",
   ],
   authors: [{ name: "SIAC STUDIO" }],
   creator: "SIAC STUDIO",
+  metadataBase: new URL("https://siac-studio.vercel.app"),
   openGraph: {
     type: "website",
     locale: "pt_BR",
@@ -52,12 +55,16 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SIAC STUDIO — Artes para Sublimação",
     description:
-      "Arte digital 100% vetorizada para sublimação.",
-    images: ["/og-image.jpg"],
+      "Arte digital 100% vetorizada para sublimação. Mascotes, personagens e chapas para transferência.",
+    images: ["/og-image.svg"],
+    creator: "@siacstudio",
   },
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
+  },
+  other: {
+    "viewport": "width=device-width, initial-scale=1",
   },
 };
 
