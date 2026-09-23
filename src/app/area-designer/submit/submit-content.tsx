@@ -270,39 +270,37 @@ export default function SubmitContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold">URL da imagem (prévia)</label>
+              <label className="mb-2 block text-sm font-semibold">Seu preview.png aqui</label>
               <input
-                type="url"
-                value={imagemUrl}
-                onChange={(e) => setImagemUrl(e.target.value)}
-                placeholder="https://seuserver.com/imagem.jpg"
-                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
+                type="file"
+                accept=".png"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setImagemUrl(URL.createObjectURL(file));
+                  }
+                }}
+                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 file:cursor-pointer"
               />
-              <p className="mt-1 text-xs text-gray-500">Link para a imagem de prévia do produto</p>
+              <p className="mt-1 text-xs text-gray-500">Seu preview.png aqui</p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold">URL do arquivo (RAR/CDR/PNG)</label>
+              <label className="mb-2 block text-sm font-semibold">Seu arquivo.rar aqui <span className="text-blue-400">(CDR, PDF e FONT)</span></label>
               <input
-                type="url"
-                value={arquivoUrl}
-                onChange={(e) => setArquivoUrl(e.target.value)}
-                placeholder="https://seuserver.com/arquivo.rar"
-                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
+                type="file"
+                accept=".rar"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setArquivoUrl(URL.createObjectURL(file));
+                  }
+                }}
+                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 file:cursor-pointer"
               />
-              <p className="mt-1 text-xs text-gray-500">Link para o arquivo de download do cliente</p>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold">URL da thumbnail (pequena)</label>
-              <input
-                type="url"
-                value={thumbnailUrl}
-                onChange={(e) => setThumbnailUrl(e.target.value)}
-                placeholder="https://seuserver.com/thumb.jpg"
-                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
-              />
-              <p className="mt-1 text-xs text-gray-500">Imagem menor para o grid de catálogo (opcional)</p>
+              <p className="mt-1 text-xs text-gray-500">
+                O .rar deve conter: <span className="text-blue-400">CDR, PDF e FONT</span> compactados
+              </p>
             </div>
           </div>
 
