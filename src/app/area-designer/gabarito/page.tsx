@@ -21,7 +21,7 @@ export default function GabaritoPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "gabarito-siax-studio.rar";
+      a.download = "gabarito-siac-studio.rar";
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {

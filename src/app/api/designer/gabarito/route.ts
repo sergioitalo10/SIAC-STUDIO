@@ -8,7 +8,7 @@ export async function GET() {
     process.cwd(),
     "public",
     "gabarito",
-    "gabarito-siax-studio.rar"
+    "gabarito-siac-studio.rar"
   );
 
   if (!fs.existsSync(gabaritoPath)) {
