@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     const sql = neon(dbUrl);
     const body = await request.json();
-    const { nome, email, senha } = body;
+    const { nome, email, senha, pix } = body;
 
     if (!nome || !email || !senha) {
       return NextResponse.json({ error: "Preencha nome, e-mail e senha" }, { status: 400 });
@@ -29,9 +29,9 @@ export async function POST(request: Request) {
     const senhaHash = await bcrypt.hash(senha, 10);
 
     const result: any = await sql`
-      INSERT INTO designers (nome, email, senha)
-      VALUES (${nome}, ${email}, ${senhaHash})
-      RETURNING id, nome, email, criado_em
+      INSERT INTO designers (nome, email, senha, pix)
+      VALUES (${nome}, ${email}, ${senhaHash}, ${pix || null})
+      RETURNING id, nome, email, pix, created_at
     `;
 
     return NextResponse.json({
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
         id: result[0].id,
         nome: result[0].nome,
         email: result[0].email,
+        pix: result[0].pix,
       },
     });
   } catch (error: any) {

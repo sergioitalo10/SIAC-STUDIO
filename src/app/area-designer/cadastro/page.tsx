@@ -13,6 +13,7 @@ export default function CadastroPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirma, setConfirma] = useState("");
+  const [pix, setPix] = useState("");
   const [termos, setTermos] = useState(false);
 
   async function handleCadastro(e: React.FormEvent) {
@@ -32,7 +33,7 @@ export default function CadastroPage() {
       const res = await fetch("/api/designer/auth/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome: nome.trim(), email: email.trim().toLowerCase(), senha }),
+        body: JSON.stringify({ nome: nome.trim(), email: email.trim().toLowerCase(), senha, pix }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -105,6 +106,17 @@ export default function CadastroPage() {
               placeholder="Repita a senha"
               style={styles.input}
               required
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Chave PIX (para recebimento das comissões)</label>
+            <input
+              type="text"
+              value={pix}
+              onChange={(e) => setPix(e.target.value)}
+              placeholder="CPF, e-mail, telefone ou chave aleatória do PIX"
+              style={styles.input}
             />
           </div>
 
