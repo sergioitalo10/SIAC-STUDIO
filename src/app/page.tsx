@@ -633,7 +633,7 @@ export default function Home() {
             </p>
             <h2 className="mt-2 text-2xl font-bold">Artes dos Colaboradores</h2>
             <p className="mt-1 text-xs text-gray-400">
-              Produtos criados por designers parceiros — 40% da venda vai para o designer.
+              Produtos criados por designers parceiros.
             </p>
           </div>
           <span className="text-xs text-gray-500">

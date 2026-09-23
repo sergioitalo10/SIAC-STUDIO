@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { neon } from "@neondatabase/serverless";
+import { sendDesignerSaleNotification } from "@/lib/email";
 
 export async function POST(request: Request) {
   console.log("--> WEBHOOK MERCADO PAGO RECEBIDO");
@@ -104,6 +105,17 @@ export async function POST(request: Request) {
               `;
               console.log(
                 `✅ EARNING registrado: pedido #${pedidoId}, designer_id=${designerId}, comissao=R$ ${comissao.toFixed(2)}`
+              );
+
+              // Envia e-mail de notificação para o designer
+              await sendDesignerSaleNotification(
+                item.designer_email || "",
+                item.designer_nome || "Designer",
+                Number(pedidoId),
+                Number(precoVenda),
+                comissao
+              ).catch((err) =>
+                console.error(`⚠️ Falha ao enviar e-mail para designer ${designerId}:`, err.message)
               );
             }
           }
