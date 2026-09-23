@@ -14,8 +14,51 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SIAC STUDIO — Artes para Sublimação",
-  description: "Arte digital 100% vetorizada para sublimação. Baixe arquivos CDR, PNG e RAR de alta resolução.",
+  title: {
+    default: "SIAC STUDIO — Artes para Sublimação",
+    template: "%s | SIAC STUDIO",
+  },
+  description:
+    "Arte digital 100% vetorizada para sublimação. Baixe arquivos CDR, PNG e RAR de alta resolução com mascotes e personagens exclusivos.",
+  keywords: [
+    "artes para sublimação",
+    "sublimação",
+    "CDR",
+    "PNG",
+    "vetorizado",
+    "mascote",
+    "estamparia",
+    "produtos personalizados",
+  ],
+  authors: [{ name: "SIAC STUDIO" }],
+  creator: "SIAC STUDIO",
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "SIAC STUDIO",
+    title: "SIAC STUDIO — Artes para Sublimação",
+    description:
+      "Arte digital 100% vetorizada para sublimação. Baixe arquivos CDR, PNG e RAR de alta resolução com mascotes e personagens exclusivos.",
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "SIAC STUDIO — Artes para Sublimação",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SIAC STUDIO — Artes para Sublimação",
+    description:
+      "Arte digital 100% vetorizada para sublimação.",
+    images: ["/og-image.jpg"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -25,9 +68,9 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+          lang="pt-BR"
+          className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        >
       <body>
         <CartProvider>
           {children}
