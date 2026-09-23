@@ -1,29 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+const GABARITO_DRIVE_URL = process.env.NEXT_PUBLIC_GABARITO_DRIVE_URL
+  || "https://drive.google.com/uc?id=PLACEHOLDER_ID&export=download";
 
 export default function GabaritoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isAutenticado, setIsAutenticado] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const sessao = localStorage.getItem("designer_sessao");
+    setIsAutenticado(!!sessao);
+    setCheckingAuth(false);
+  }, []);
 
   async function handleDownload() {
+    if (!isAutenticado) return;
     setLoading(true);
     setError("");
     try {
+      // Chama a API que retorna o link do Drive
       const res = await fetch("/api/designer/gabarito");
       if (!res.ok) {
-        setError("Erro ao gerar gabarito. Tente novamente.");
+        setError("Erro ao obter link de download. Tente novamente.");
         return;
       }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "gabarito-siac-studio.rar";
-      a.click();
-      window.URL.revokeObjectURL(url);
+      const data = await res.json();
+      if (data.url) {
+        // Redireciona para o Google Drive
+        window.location.href = data.url;
+      } else {
+        setError("Link de download não disponível.");
+      }
     } catch (err) {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -31,10 +44,81 @@ export default function GabaritoPage() {
     }
   }
 
+  function logout() {
+    localStorage.removeItem("designer_sessao");
+    router.push("/area-designer/login");
+  }
+
+  // Enquanto verifica auth, mostra loading
+  if (checkingAuth) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <p style={styles.subtitle}>Verificando sessão...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não está logado, mostra mensagem
+  if (!isAutenticado) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h1 style={styles.title}>Baixe o Gabarito de Arte</h1>
+          <p style={styles.subtitle}>
+            Faça login para baixar o arquivo modelo e criar suas artes
+            seguindo o padrão da SIAC STUDIO.
+          </p>
+
+          <div style={styles.loginPrompt}>
+            <p style={styles.promptText}>
+              Você precisa estar logado como designer para acessar o gabarito.
+            </p>
+            <button
+              onClick={() => router.push("/area-designer/login")}
+              style={styles.loginButton}
+            >
+              Fazer Login
+            </button>
+            <p style={styles.backLink}>
+              Não tem conta?{" "}
+              <a
+                href="/area-designer/cadastro"
+                style={styles.link}
+                onClick={(e) => {
+                  e.preventDefault();
+                  router.push("/area-designer/cadastro");
+                }}
+              >
+                Cadastre-se
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Designer logado - mostra conteúdo e botão de download
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Baixe o Gabarito de Arte</h1>
+        <div style={styles.header}>
+          <h1 style={styles.title}>Baixe o Gabarito de Arte</h1>
+          <div style={styles.loggedInfo}>
+            <span style={styles.welcome}>
+              Olá, {JSON.parse(localStorage.getItem("designer_sessao") || '{}').nome}
+            </span>
+            <button
+              onClick={logout}
+              style={styles.logoutButton}
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+
         <p style={styles.subtitle}>
           Baixe o arquivo modelo para criar suas artes seguindo o padrão da
           SIAC STUDIO.
@@ -90,7 +174,7 @@ export default function GabaritoPage() {
           disabled={loading}
           style={styles.button}
         >
-          {loading ? "Gerando gabarito..." : "Baixar Gabarito (.rar)"}
+          {loading ? "Preparando download..." : "Baixar Gabarito (.rar)"}
         </button>
 
         {error && <p style={styles.error}>{error}</p>}
@@ -210,6 +294,63 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#e94560",
     textDecoration: "none",
     fontWeight: 600,
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1.5rem",
+    flexWrap: "wrap" as const,
+    gap: "1rem",
+  },
+  loggedInfo: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+  },
+  welcome: {
+    fontSize: "1rem",
+    fontWeight: 600,
+    color: "#a0a0b0",
+  },
+  logoutButton: {
+    padding: "0.5rem 1rem",
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    color: "#ff6b6b",
+    background: "rgba(255,107,107,0.1)",
+    border: "1px solid rgba(255,107,107,0.3)",
+    borderRadius: "6px",
+    cursor: "pointer",
+    transition: "background 0.2s",
+  },
+  loginPrompt: {
+    textAlign: "center" as const,
+    padding: "2rem",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "12px",
+    marginTop: "1.5rem",
+  },
+  promptText: {
+    fontSize: "1rem",
+    color: "#a0a0b0",
+    marginBottom: "1.5rem",
+  },
+  loginButton: {
+    display: "block",
+    width: "100%",
+    padding: "0.9rem 1.5rem",
+    fontSize: "1.1rem",
+    fontWeight: 600,
+    color: "#ffffff",
+    background: "linear-gradient(135deg, #e94560 0%, #c23152 100%)",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    boxShadow: "0 4px 15px rgba(233,69,96,0.4)",
+    marginBottom: "1rem",
+    transition: "transform 0.2s, box-shadow 0.2s",
   },
 };
 
