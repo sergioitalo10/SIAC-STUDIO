@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios - SIAC STUDIO</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #000;
+      color: #fff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #60a5fa;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .relatorio {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+    }
+    .relatorio h2 {
+      color: #94a3b8;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      background: #1f2937;
+      color: #94a3b8;
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #2a2a2a;
+      color: #e2e8f0;
+    }
+    tr:hover td {
+      background: #1a1a1a;
+    }
+    .empty {
+      color: #64748b;
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+    }
+    .total {
+      color: #4ade80;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      padding: 20px;
+    }
+    .btn-imprimir {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+    }
+    .btn-imprimir:hover {
+      background: #1d4ed8;
+    }
+    .btn-imprimir:disabled {
+      background: #4b5563;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .msg {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .msg-ok {
+      background: rgba(74, 222, 128, 0.1);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    .msg-err {
+      background: rgba(248, 113, 113, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    /* Impressão */
+    @media print {
+      body { background: white; color: black; padding: 0; }
+      .btn-imprimir, .msg, h1 { display: none !important; }
+      .container { max-width: 100%; padding: 0; }
+      .relatorio {
+        background: white;
+        border: 1px solid #ccc;
+        color: black;
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+      }
+      .relatorio h2 {
+        color: #333;
+        border-bottom: 1px solid #ccc;
+      }
+      table { width: 100%; }
+      th {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+      }
+      td {
+        border-bottom: 1px solid #e5e7eb;
+        color: #111827;
+      }
+      .empty { color: #6b7280; }
+      .total { color: #16a34a; background: #f9fafb; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Relatórios - SIAC STUDIO</h1>
+
+    <div id="msg"></div>
+
+    <div id="relatorios"></div>
+
+    <button id="btnImprimir" class="btn-imprimir" onclick="imprimirRelatorios()">
+      Gerar e Imprimir Relatórios
+    </button>
+  </div>
+
+  <script>
+    // Dados mockados para teste (substituir pelas chamadas API reais)
+    const dados mock = {
+      clientes: [
+        { id: 1, nome: "Carlos Silva", email: "carlos@email.com", criado_em: "2024-01-15T10:30:00.000Z" },
+        { id: 2, nome: "Ana Oliveira", email: "ana@email.com", criado_em: "2024-02-20T14:00:00.000Z" },
+      ],
+      vendas: [
+        { id: 1, cliente_email: "carlos@email.com", total: 150.00, status: "pago", criado_em: "2024-03-01T09:00:00.000Z" },
+        { id: 2, cliente_email: "ana@email.com", total: 280.50, status: "pago", criado_em: "2024-03-10T16:30:00.000Z" },
+      ],
+      faturamento: 430.50,
+      totalVendas: 2,
+      artes_totais: 15,
+      artes_ultimas: [
+        { id: 1, nome: "Arte 1", designer_id: 1, criado_em: "2024-03-15T12:00:00.000Z" },
+        { id: 2, nome: "Arte 2", designer_id: 2, criado_em: "2024-03-14T10:00:00.000Z" },
+        { id: 3, nome: "Arte 3", designer_id: null, criado_em: "2024-03-13T15:00:00.000Z" },
+      ],
+      designers: [
+        { id: 1, nome: "Bruno", email: "bruno@email.com", pix: "12345678901", criado_em: "2024-01-01T00:00:00.000Z" },
+      ],
+    };
+
+    let relatoriosPreview = [];
+    let loadingReports = false;
+
+    function formatoData(s) {
+      try {
+        return new Date(s).toLocaleDateString("pt-BR");
+      } catch {
+        return s;
+      }
+    }
+
+    function tratarErro(e) {
+      const msg = document.getElementById("msg");
+      msg.innerHTML = `<div class="msg msg-err">Erro ao gerar relatórios: ${e.message || e}</div>`;
+      loadingReports = false;
+      atualizarBotao();
+    }
+
+    function atualizarBotao() {
+      const btn = document.getElementById("btnImprimir");
+      const checkboxes = document.querySelectorAll('.toggle-relatorio');
+      const temSelecionados = Array.from(checkboxes).some(cb => cb.checked);
+      btn.disabled = loadingReports || !temSelecionados;
+      if (loadingReports) {
+        btn.textContent = "Gerando...";
+      } else {
+        btn.textContent = "Gerar e Imprimir Relatórios";
+      }
+    }
+
+    function imprimirRelatorios() {
+      if (loadingReports) return;
+
+      // Verificar se há checkboxes selecionados
+      const checkboxes = document.querySelectorAll('.toggle-relatorio');
+      const selecionadas = Array.from(checkboxes).filter(cb => cb.checked);
+      if (selecionadas.length === 0) {
+        tratarErro("Selecione pelo menos um relatório para imprimir.");
+        return;
+      }
+
+      loadingReports = true;
+      atualizarBotao();
+      document.getElementById("msg").innerHTML = "";
+      document.getElementById("relatorios").innerHTML = "";
+
+      // Simula fetch - substituir com fetch real para /api/admin/relatorios
+      setTimeout(() => {
+        try {
+          const previews = [];
+          const ids = selecionadas.map(cb => cb.dataset.id);
+
+          if (ids.includes("clientes")) {
+            const rows = dados.mock.clientes;
+            let html = `<table>
+              <thead><tr>
+                <th>ID</th><th>Nome</th><th>E-mail</th><th>Cadastro</th>
+              </tr></thead>
+              <tbody>`;
+            if (rows.length === 0) {
+              html += `<tr><td colspan="4" class="empty">Nenhum cliente cadastrado.</td></tr>`;
+            } else {
+              rows.forEach(r => {
+                html += `<tr>
+                  <td>#${r.id}</td>
+                  <td>${r.nome}</td>
+                  <td>${r.email}</td>
+                  <td>${formatoData(r.criado_em)}</td>
+                </tr>`;
+              });
+            }
+            html += `</tbody></table>`;
+            previews.push({ id: "clientes", label: "Clientes cadastrados", content: html });
+          }
+
+          if (ids.includes("vendas")) {
+            const rows = dados.mock.vendas;
+            let html = `<table>
+              <thead><tr>
+                <th>ID</th><th>Cliente</th><th>Valor</th><th>Status</th><th>Data</th>
+              </tr></thead>
+              <tbody>`;
+            if (rows.length === 0) {
+              html += `<tr><td colspan="5" class="empty">Nenhuma venda registrada.</td></tr>`;
+            } else {
+              rows.forEach(r => {
+                html += `<tr>
+                  <td>#${r.id}</td>
+                  <td>${r.cliente_email}</td>
+                  <td>R$ ${r.total.toFixed(2).replace(".", ",")}</td>
+                  <td>${r.status}</td>
+                  <td>${formatoData(r.criado_em)}</td>
+                </tr>`;
+              });
+            }
+            html += `</tbody></table>`;
+            previews.push({ id: "vendas", label: "Vendas (pedidos pagos)", content: html });
+          }
+
+          if (ids.includes("artes-totais")) {
+            previews.push({ id: "artes-totais", label: "Artes totais", content: `
+              <div class="total">${dados.mock.artes_totais}</div>
+              <div style="color: #94a3b8; text-align: center; font-size: 14px;">Total de artes disponíveis no catálogo</div>
+            ` });
+          }
+
+          if (ids.includes("artes-ultimas")) {
+            const rows = dados.mock.artes_ultimas;
+            let html = `<table>
+              <thead><tr>
+                <th>ID</th><th>Arte</th><th>Designer ID</th><th>Adicionada em</th>
+              </tr></thead>
+              <tbody>`;
+            if (rows.length === 0) {
+              html += `<tr><td colspan="4" class="empty">Nenhuma arte encontrada.</td></tr>`;
+            } else {
+              rows.forEach(a => {
+                html += `<tr>
+                  <td>#${a.id}</td>
+                  <td>${a.nome || "Produto #" + a.id}</td>
+                  <td>${a.designer_id ?? "—"}</td>
+                  <td>${formatoData(a.criado_em)}</td>
+                </tr>`;
+              });
+            }
+            html += `</tbody></table>`;
+            previews.push({ id: "artes-ultimas", label: "Últimas artes", content: html });
+          }
+
+          if (ids.includes("designers")) {
+            previews.push({ id: "designers", label: "Designers cadastrados", content: `
+              <div class="total">R$ ${dados.mock.faturamento.toFixed(2).replace(".", ",")}</div>
+              <div style="color: #94a3b8; text-align: center; font-size: 14px;">Total de pedidos pagos no sistema</div>
+            ` });
+          }
+
+          // Renderiza os relatórios
+          const container = document.getElementById("relatorios");
+          container.innerHTML = previews.map(p => `
+            <div class="relatorio">
+              <h2>${p.label}</h2>
+              ${p.content}
+            </div>
+          `).join("");
+
+          // Aguarda renderização e imprime
+          setTimeout(() => {
+            window.focus();
+            setTimeout(() => {
+              console.log("[ADMIN] Disparando window.print()...");
+              window.print();
+            }, 200);
+          }, 400);
+
+        } catch (e) {
+          tratarErro(e);
+        }
+      }, 100);
+    }
+
+    // Carrega checkboxes dos relatórios disponíveis
+    function carregarCheckboxes() {
+      const container = document.getElementById("relatorios");
+      const relatorios = [
+        { id: "clientes", label: "Clientes cadastrados", desc: "Lista todos os clientes que se cadastraram no site." },
+        { id: "vendas", label: "Vendas (pedidos pagos)", desc: "Lista todos os pedidos pagos com dados do cliente." },
+        { id: "artes-totais", label: "Artes totais", desc: "Total de artes disponíveis no catálogo." },
+        { id: "artes-ultimas", label: "Últimas artes", desc: "As últimas artes adicionadas ao catálogo." },
+        { id: "designers", label: "Designers cadastrados", desc: "Lista todos os designers colaboradores cadastrados." },
+      ];
+
+      container.innerHTML = relatorios.map(r => `
+        <label class="relatorio" style="cursor: pointer; margin-bottom: 10px;">
+          <div class="relatorio" style="display: flex; align-items: center; gap: 12px; padding: 12px;">
+            <input type="checkbox" class="toggle-relatorio" data-id="${r.id}" style="
+              width: 18px; height: 18px; accent-color: #2563eb; cursor: pointer;
+            ">
+            <div>
+              <strong>${r.label}</strong><br>
+              <span style="color: #94a3b8; font-size: 12px;">${r.desc}</span>
+            </div>
+          </div>
+        </label>
+      `).join("");
+    }
+
+    // Inicializa
+    carregarCheckboxes();
+    atualizarBotao();
+  </script>
+</body>
+</html>
