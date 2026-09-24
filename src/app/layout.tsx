@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import AnimatedGradient from "@/components/animated-gradient";
+import LightRays from "@/components/light-rays";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,10 +80,12 @@ export default function RootLayout({
           lang="pt-BR"
           className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
         >
-      <body>
+      <body className="relative min-h-screen bg-black text-white">
+        <AnimatedGradient />
         <CartProvider>
           {children}
         </CartProvider>
+        <LightRays />
       </body>
     </html>
   );
