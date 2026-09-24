@@ -11,7 +11,7 @@ export async function GET() {
     const sql = neon(dbUrl);
 
     const clientes: any[] = await sql`
-      SELECT id, nome, email, created_at
+      SELECT id, nome, email
       FROM usuarios
       ORDER BY id ASC
     `;

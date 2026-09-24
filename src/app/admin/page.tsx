@@ -9,7 +9,6 @@ interface Cliente {
   id: number;
   nome: string;
   email: string;
-  created_at: string;
 }
 
 interface Designer {
@@ -560,10 +559,7 @@ export default function AdminResidenciesPage() {
                         </p>
                         <h3 className="text-lg font-bold">{c.nome}</h3>
                         <p className="text-sm text-gray-400">{c.email}</p>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span>Cadastrado em {isoToDate(c.created_at)}</span>
-                      </div>
+                    </div>
                     </div>
                     <div className="flex justify-end">
                       <button
@@ -623,11 +619,8 @@ export default function AdminResidenciesPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span>Cadastrado em {isoToDate(d.created_at)}</span>
-                      </div>
                     </div>
-                    <div className="flex justify-end">
+                      <div className="flex justify-end">
                       <button
                         onClick={() => apagarDesigner(d.id)}
                         disabled={deletingId === d.id}
