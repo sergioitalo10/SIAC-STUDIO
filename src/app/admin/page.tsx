@@ -358,9 +358,12 @@ export default function AdminResidenciesPage() {
   /* ---------- verificação de autenticação ---------- */
 
   useEffect(() => {
-    console.log("[ADMIN] Verificando autenticação...");
+    console.log("[ADMIN] Verificando autenticação... (authenticated atual:", authenticated + ")");
     fetch("/api/admin/auth", { credentials: "include" })
-      .then((r) => r.json())
+      .then((r) => {
+        console.log("[ADMIN] Auth fetch response status:", r.status);
+        return r.json();
+      })
       .then((data) => {
         console.log("[ADMIN] Auth response:", data);
         if (!data.authenticated) {
@@ -391,20 +394,29 @@ export default function AdminResidenciesPage() {
       return;
     }
     console.log("[ADMIN] Iniciando carregamento de dados...");
+    const timer = setTimeout(() => {
+      if (loading) {
+        console.error("[ADMIN] Timeout: dados nao carregaram em 10s");
+        setMsg({ tipo: "err", texto: "Erro ao carregar dados. Recarregue a pagina." });
+        setLoading(false);
+      }
+    }, 10000);
     Promise.all([
-      fetch("/api/admin/clientes").then((r) => r.json()),
-      fetch("/api/deletar-designer").then((r) => r.json()),
-      fetch("/api/admin/pedidos").then((r) => r.json()),
+      fetch("/api/admin/clientes", { credentials: "include" }).then((r) => r.json()),
+      fetch("/api/deletar-designer", { credentials: "include" }).then((r) => r.json()),
+      fetch("/api/admin/pedidos", { credentials: "include" }).then((r) => r.json()),
     ])
       .then(([c, d, p]) => {
+        clearTimeout(timer);
         console.log("[ADMIN] Dados carregados - clientes:", (c.clientes || []).length, "designers:", (d.designers || []).length, "pedidos:", (p.pedidos || []).length);
         setClientes(c.clientes || []);
         setDesigners(d.designers || []);
         setPedidos(p.pedidos || []);
       })
       .catch((err) => {
+        clearTimeout(timer);
         console.error("[ADMIN] Erro ao carregar dados:", err);
-        setMsg({ tipo: "err", texto: "Erro ao carregar dados" });
+        setMsg({ tipo: "err", texto: "Erro ao carregar dados: " + (err.message || "desconhecido") });
       })
       .finally(() => setLoading(false));
   }, [authenticated]);
