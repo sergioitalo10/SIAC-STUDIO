@@ -80,10 +80,8 @@ export default function RootLayout({
           lang="pt-BR"
           className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
         >
-      <body className="relative min-h-screen text-white">
-        <div className="pointer-events-none relative z-0">
-          <AnimatedGradient />
-        </div>
+      <body className="relative min-h-screen bg-black text-white">
+        <AnimatedGradient />
         <CartProvider>
           {children}
         </CartProvider>

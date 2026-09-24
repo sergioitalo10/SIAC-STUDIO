@@ -193,7 +193,7 @@ export default function AreaDesignerPage() {
           <form onSubmit={handleCadastro} className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
             <h2 className="text-xl font-bold">Criar conta de designer</h2>
             <p className="mt-1 text-sm text-gray-400">
-              Envie suas artes e ganhe 40% de cada venda no SIAC STUDIO.
+              Sua arte publicada em segundos!
             </p>
 
             <div className="mt-6 space-y-4">
