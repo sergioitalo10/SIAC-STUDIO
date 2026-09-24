@@ -46,7 +46,10 @@ export async function POST(request: Request) {
     }
 
     // Valida senha atual
-    const admin: any = await sql`SELECT password_hash FROM admin_users LIMIT 1`;
+    const admin: any = await sql`SELECT id, password_hash FROM admin_users LIMIT 1`;
+    if (!admin || !admin.password_hash) {
+      return NextResponse.json({ error: "Admin não encontrado." }, { status: 404 });
+    }
     const valido = await bcrypt.compare(currentPassword, admin.password_hash);
     if (!valido) {
       return NextResponse.json({ error: "Senha atual incorreta." }, { status: 401 });

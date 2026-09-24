@@ -130,7 +130,7 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
     const alphaTwinkle = Math.sin(t * 2.1 + i * 1.7 + frac * 30) * CONFIG.twinkle;
     const alpha = Math.max(0.01, alphaBase + alphaTwinkle);
 
-    const spread = CONFIG.rayWidth + Math.sin(t * 0.08 + i * 0.5) * CONFIG.raySoftness;
+    const spread = Math.max(1, CONFIG.rayWidth + Math.sin(t * 0.08 + i * 0.5) * CONFIG.raySoftness);
 
     const endX = originX + dx * rayLen;
     const endY = originY + dy * rayLen;

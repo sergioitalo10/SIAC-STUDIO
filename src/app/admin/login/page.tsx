@@ -50,7 +50,11 @@ export default function AdminLoginPage() {
 
         {/* FORM */}
         <div className="rounded-2xl border border-gray-800 bg-gray-950 p-8">
-          <h2 className="mb-6 text-xl font-bold">Entrar no admin</h2>
+          <h2 className="mb-2 text-xl font-bold">Entrar no admin</h2>
+          <p className="mb-6 text-xs text-gray-400">
+            Primeiro acesso: login <span className="text-blue-400 font-semibold">admin</span> / senha{" "}
+            <span className="text-blue-400 font-semibold">admin</span>
+          </p>
 
           {error && (
             <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-sm text-red-400">
