@@ -612,7 +612,7 @@ export default function AdminResidenciesPage() {
       {/* TABS */}
       <div className="mx-auto max-w-7xl px-6 pt-6">
         <div className="rounded-xl border border-gray-800 bg-gray-950 p-1">
-          {(["clientes", "designers", "pedidos", "configuracoes"] as Tab[]).map((t) => (
+          {(["clientes", "designers", "pedidos", "configuracoes", "relatorios"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
