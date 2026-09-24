@@ -359,7 +359,7 @@ export default function AdminResidenciesPage() {
 
   useEffect(() => {
     console.log("[ADMIN] Verificando autenticação...");
-    fetch("/api/admin/auth")
+    fetch("/api/admin/auth", { credentials: "include" })
       .then((r) => r.json())
       .then((data) => {
         console.log("[ADMIN] Auth response:", data);
@@ -386,6 +386,10 @@ export default function AdminResidenciesPage() {
       console.log("[ADMIN] authenticated=false, retornando sem carregar");
       return;
     }
+    if (authenticated === null) {
+      console.log("[ADMIN] authenticated=null (ainda verificando auth), aguardando...");
+      return;
+    }
     console.log("[ADMIN] Iniciando carregamento de dados...");
     Promise.all([
       fetch("/api/admin/clientes").then((r) => r.json()),
@@ -393,7 +397,7 @@ export default function AdminResidenciesPage() {
       fetch("/api/admin/pedidos").then((r) => r.json()),
     ])
       .then(([c, d, p]) => {
-        console.log("[ADMIN] Dados carregados - clientes:", c.clientes?.length, "designers:", d.designers?.length, "pedidos:", p.pedidos?.length);
+        console.log("[ADMIN] Dados carregados - clientes:", (c.clientes || []).length, "designers:", (d.designers || []).length, "pedidos:", (p.pedidos || []).length);
         setClientes(c.clientes || []);
         setDesigners(d.designers || []);
         setPedidos(p.pedidos || []);
