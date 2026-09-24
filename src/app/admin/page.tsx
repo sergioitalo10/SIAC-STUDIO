@@ -355,71 +355,45 @@ export default function AdminResidenciesPage() {
     }
   }
 
-  /* ---------- verificação de autenticação ---------- */
+  /* ---------- autenticação e cargas ---------- */
 
   useEffect(() => {
-    console.log("[ADMIN] Verificando autenticação... (authenticated atual:", authenticated + ")");
-    fetch("/api/admin/auth", { credentials: "include" })
-      .then((r) => {
-        console.log("[ADMIN] Auth fetch response status:", r.status);
-        return r.json();
-      })
-      .then((data) => {
-        console.log("[ADMIN] Auth response:", data);
-        if (!data.authenticated) {
-          console.log("[ADMIN] Não autenticado, redirecionando para /admin/login");
+    async function verificarEcarregar() {
+      try {
+        const authRes = await fetch("/api/admin/auth", { credentials: "include" });
+        const authData = await authRes.json();
+
+        if (!authData.authenticated) {
           router.push("/admin/login");
-        } else {
-          console.log("[ADMIN] Autenticado, carregando config...");
-          setAuthenticated(true);
-          loadConfig();
+          return;
         }
-      })
-      .catch((err) => {
-        console.error("[ADMIN] Erro na verificação de auth:", err);
-        router.push("/admin/login");
-      });
-  }, [router]);
 
-  /* ---------- cargas ---------- */
+        setAuthenticated(true);
 
-  useEffect(() => {
-    console.log("[ADMIN] useEffect de cargas - authenticated:", authenticated);
-    if (authenticated === false) {
-      console.log("[ADMIN] authenticated=false, retornando sem carregar");
-      return;
-    }
-    if (authenticated === null) {
-      console.log("[ADMIN] authenticated=null (ainda verificando auth), aguardando...");
-      return;
-    }
-    console.log("[ADMIN] Iniciando carregamento de dados...");
-    const timer = setTimeout(() => {
-      if (loading) {
-        console.error("[ADMIN] Timeout: dados nao carregaram em 10s");
-        setMsg({ tipo: "err", texto: "Erro ao carregar dados. Recarregue a pagina." });
+        const [cRes, dRes, pRes] = await Promise.all([
+          fetch("/api/admin/clientes", { credentials: "include" }),
+          fetch("/api/deletar-designer", { credentials: "include" }),
+          fetch("/api/admin/pedidos", { credentials: "include" }),
+        ]);
+
+        const cData = await cRes.json();
+        const dData = await dRes.json();
+        const pData = await pRes.json();
+
+        setClientes(cData.clientes || []);
+        setDesigners(dData.designers || []);
+        setPedidos(pData.pedidos || []);
+      } catch (e: any) {
+        console.error("[ADMIN] Erro de carregamento:", e);
+        setMsg({ tipo: "err", texto: "Erro ao carregar. Tente recarregar." });
+      } finally {
         setLoading(false);
       }
-    }, 10000);
-    Promise.all([
-      fetch("/api/admin/clientes", { credentials: "include" }).then((r) => r.json()),
-      fetch("/api/deletar-designer", { credentials: "include" }).then((r) => r.json()),
-      fetch("/api/admin/pedidos", { credentials: "include" }).then((r) => r.json()),
-    ])
-      .then(([c, d, p]) => {
-        clearTimeout(timer);
-        console.log("[ADMIN] Dados carregados - clientes:", (c.clientes || []).length, "designers:", (d.designers || []).length, "pedidos:", (p.pedidos || []).length);
-        setClientes(c.clientes || []);
-        setDesigners(d.designers || []);
-        setPedidos(p.pedidos || []);
-      })
-      .catch((err) => {
-        clearTimeout(timer);
-        console.error("[ADMIN] Erro ao carregar dados:", err);
-        setMsg({ tipo: "err", texto: "Erro ao carregar dados: " + (err.message || "desconhecido") });
-      })
-      .finally(() => setLoading(false));
-  }, [authenticated]);
+    }
+
+    verificarEcarregar();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ---------- deleções ---------- */
 
