@@ -46,7 +46,8 @@ export async function POST(request: Request) {
     }
 
     // Valida senha atual
-    const admin: any = await sql`SELECT id, password_hash FROM admin_users LIMIT 1`;
+    const admins: any[] = await sql`SELECT id, password_hash FROM admin_users LIMIT 1`;
+    const admin = admins[0];
     if (!admin || !admin.password_hash) {
       return NextResponse.json({ error: "Admin não encontrado." }, { status: 404 });
     }
