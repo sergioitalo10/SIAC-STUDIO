@@ -358,17 +358,22 @@ export default function AdminResidenciesPage() {
   /* ---------- verificação de autenticação ---------- */
 
   useEffect(() => {
+    console.log("[ADMIN] Verificando autenticação...");
     fetch("/api/admin/auth")
       .then((r) => r.json())
       .then((data) => {
+        console.log("[ADMIN] Auth response:", data);
         if (!data.authenticated) {
+          console.log("[ADMIN] Não autenticado, redirecionando para /admin/login");
           router.push("/admin/login");
         } else {
+          console.log("[ADMIN] Autenticado, carregando config...");
           setAuthenticated(true);
           loadConfig();
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[ADMIN] Erro na verificação de auth:", err);
         router.push("/admin/login");
       });
   }, [router]);
