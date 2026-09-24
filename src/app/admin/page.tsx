@@ -369,6 +369,7 @@ export default function AdminResidenciesPage() {
         }
 
         setAuthenticated(true);
+        await loadConfig();
 
         const [cRes, dRes, pRes] = await Promise.all([
           fetch("/api/admin/clientes", { credentials: "include" }),
