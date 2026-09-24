@@ -381,18 +381,27 @@ export default function AdminResidenciesPage() {
   /* ---------- cargas ---------- */
 
   useEffect(() => {
-    if (authenticated === false) return; // não carrega se não autenticado (redirecionado)
+    console.log("[ADMIN] useEffect de cargas - authenticated:", authenticated);
+    if (authenticated === false) {
+      console.log("[ADMIN] authenticated=false, retornando sem carregar");
+      return;
+    }
+    console.log("[ADMIN] Iniciando carregamento de dados...");
     Promise.all([
       fetch("/api/admin/clientes").then((r) => r.json()),
       fetch("/api/deletar-designer").then((r) => r.json()),
       fetch("/api/admin/pedidos").then((r) => r.json()),
     ])
       .then(([c, d, p]) => {
+        console.log("[ADMIN] Dados carregados - clientes:", c.clientes?.length, "designers:", d.designers?.length, "pedidos:", p.pedidos?.length);
         setClientes(c.clientes || []);
         setDesigners(d.designers || []);
         setPedidos(p.pedidos || []);
       })
-      .catch(() => setMsg({ tipo: "err", texto: "Erro ao carregar dados" }))
+      .catch((err) => {
+        console.error("[ADMIN] Erro ao carregar dados:", err);
+        setMsg({ tipo: "err", texto: "Erro ao carregar dados" });
+      })
       .finally(() => setLoading(false));
   }, [authenticated]);
 
