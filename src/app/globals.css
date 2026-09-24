@@ -20,14 +20,9 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: #000000;
+  background: transparent;
   color: #ffffff;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-}
-
-body {
-  position: relative;
-  z-index: 1;
 }
 
 /* camadas de efeito */
@@ -45,11 +40,12 @@ body {
   right: 0;
   height: 140px;
   pointer-events: none;
-  z-index: 1;
+  z-index: 999;
 }
 
-/* páginas que sobrescrevem o body têm que manter o stack */
+/* conteúdo principal */
 main {
   position: relative;
   z-index: 2;
+  background: transparent !important;
 }
