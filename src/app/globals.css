@@ -48,3 +48,27 @@ main {
   position: relative;
   z-index: 2;
 }
+
+/* impressão de relatórios */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .rel-print, .rel-print * {
+    visibility: visible;
+  }
+  .rel-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .light-rays,
+  .animated-gradient,
+  header,
+  .bg-black,
+  .bg-gray-950,
+  .border-gray-800 {
+    display: none !important;
+  }
+}

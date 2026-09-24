@@ -396,6 +396,17 @@ export default function AdminResidenciesPage() {
     }
   }
 
+  /* ---------- impressão ---------- */
+
+  useEffect(() => {
+    if (relatoriosPreview.length > 0) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [relatoriosPreview]);
+
   /* ---------- configurações ---------- */
 
   const [configUsername, setConfigUsername] = useState("");
@@ -948,7 +959,7 @@ export default function AdminResidenciesPage() {
             </div>
 
             {relatoriosPreview.length > 0 && (
-              <div className="space-y-6">
+              <div className="space-y-6 rel-print">
                 {relatoriosPreview.map((r) => (
                   <div key={r.id} className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
                     <div className="mb-4 flex items-center justify-between">
