@@ -10,6 +10,13 @@ export async function GET() {
 
     const sql = neon(dbUrl);
 
+    // --- clientes (usuarios) ---
+    const clientes: any[] = await sql`
+      SELECT id, nome, email, created_at
+      FROM usuarios
+      ORDER BY id ASC
+    `;
+
     // --- vendas (pedidos pagos) ---
     const pagos: any[] = await sql`
       SELECT
@@ -29,12 +36,28 @@ export async function GET() {
     `;
     const faturamento = Number(faturamentoRaw[0]?.total ?? 0);
 
-    // --- artistas ---
-    const designers: any[] = await sql`
-      SELECT id, nome, email FROM designers ORDER BY id ASC
+    // --- artes totais (count de produtos) ---
+    const artesTotaisRaw: any[] = await sql`
+      SELECT COUNT(*) AS total FROM produtos
+    `;
+    const artesTotais = Number(artesTotaisRaw[0]?.total ?? 0);
+
+    // --- últimas artes (produtos ordenados) ---
+    const artesUltimas: any[] = await sql`
+      SELECT id, nome, designer_id, criado_em
+      FROM produtos
+      ORDER BY criado_em DESC
+      LIMIT 10
     `;
 
-    // --- vendas por designer (via pedido_itens → produtos → designer_id) ---
+    // --- designers ---
+    const designers: any[] = await sql`
+      SELECT id, nome, email, pix, created_at
+      FROM designers
+      ORDER BY id ASC
+    `;
+
+    // --- vendas por designer ---
     const vendasPorDesigner: any[] = await sql`
       SELECT
         d.id AS designer_id,
@@ -59,11 +82,14 @@ export async function GET() {
       (d) => !vendasPorDesigner.some((v) => v.designer_id === d.id)
     );
 
-    // montar resultado
     const resultado = {
+      clientes,
       vendas: pagos,
       faturamento,
       totalVendas: pagos.length,
+      artes_totais: artesTotais,
+      artes_ultimas: artesUltimas,
+      designers,
       artistas: designers.map((d) => ({
         ...d,
         vendas: vendasPorDesigner.find((v) => v.designer_id === d.id) ?? {

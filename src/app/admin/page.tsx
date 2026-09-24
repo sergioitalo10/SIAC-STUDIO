@@ -55,17 +55,19 @@ export default function AdminResidenciesPage() {
   /* ---------- relatórios ---------- */
 
   const REPORT_LABELS: Record<string, string> = {
+    clientes: "Clientes cadastrados",
     vendas: "Vendas (pedidos pagos)",
-    faturamento: "Faturamento total",
-    "artes-vendidas": "Artes vendidas por designer",
-    "pagamentos-designers": "Pagamentos para designers",
+    "artes-totais": "Artes totais",
+    "artes-ultimas": "Últimas artes",
+    designers: "Designers cadastrados",
   };
 
   const [checkboxes, setCheckboxes] = useState<Record<string, boolean>>({
+    clientes: false,
     vendas: false,
-    faturamento: false,
-    "artes-vendidas": false,
-    "pagamentos-designers": false,
+    "artes-totais": false,
+    "artes-ultimas": false,
+    designers: false,
   });
   const [loadingReports, setLoadingReports] = useState(false);
   const [relatoriosPreview, setRelatoriosPreview] = useState<
@@ -87,7 +89,51 @@ export default function AdminResidenciesPage() {
 
       for (const [id] of selecionadas) {
         const label = REPORT_LABELS[id] || id;
-        if (id === "vendas") {
+        if (id === "clientes") {
+          const rows = (data.clientes || []) as Array<{
+            id: number;
+            nome: string;
+            email: string;
+            created_at: string;
+          }>;
+          const formatoData = (s: string) => {
+            try { return new Date(s).toLocaleDateString("pt-BR"); } catch { return s; }
+          };
+          previews.push({
+            id: id,
+            label: label,
+            content: (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">ID</th>
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">Nome</th>
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">E-mail</th>
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">Cadastro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                        Nenhum cliente cadastrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    rows.map((r) => (
+                      <tr key={r.id} className="border-b border-gray-800/60">
+                        <td className="py-2 text-gray-300">#{r.id}</td>
+                        <td className="py-2 font-medium text-white">{r.nome}</td>
+                        <td className="py-2 text-gray-400">{r.email}</td>
+                        <td className="py-2 text-gray-400">{formatoData(r.created_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            ),
+          });
+        } else if (id === "vendas") {
           const rows = (data.vendas || []) as Array<{
             id: number;
             cliente_email: string;
@@ -134,7 +180,67 @@ export default function AdminResidenciesPage() {
               </table>
             ),
           });
-        } else if (id === "faturamento") {
+        } else if (id === "artes-totais") {
+          const total = Number((data.artes_totais as number) || 0);
+          previews.push({
+            id: id,
+            label: label,
+            content: (
+              <div className="flex flex-col items-center gap-2 py-4">
+                <span className="text-4xl font-bold text-blue-400">
+                  {total}
+                </span>
+                <span className="text-sm text-gray-400">
+                  Total de artes disponíveis no catálogo
+                </span>
+              </div>
+            ),
+          });
+        } else if (id === "artes-ultimas") {
+          const artes = (data.artes_ultimas || []) as Array<{
+            id: number;
+            nome: string;
+            designer_id: number | null;
+            criado_em: string;
+          }>;
+          const formatoData = (s: string) => {
+            try { return new Date(s).toLocaleDateString("pt-BR"); } catch { return s; }
+          };
+          previews.push({
+            id: id,
+            label: label,
+            content: (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">ID</th>
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">Arte</th>
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">Designer ID</th>
+                    <th className="pb-2 text-left text-xs uppercase text-gray-500">Adicionada em</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {artes.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                        Nenhuma arte encontrada.
+                      </td>
+                    </tr>
+                  ) : (
+                    artes.map((a) => (
+                      <tr key={a.id} className="border-b border-gray-800/60">
+                        <td className="py-2 text-gray-300">#{a.id}</td>
+                        <td className="py-2 font-medium text-white">{a.nome || `Produto #${a.id}`}</td>
+                        <td className="py-2 text-gray-400">{a.designer_id ?? "—"}</td>
+                        <td className="py-2 text-gray-400">{formatoData(a.criado_em)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            ),
+          });
+        } else if (id === "designers") {
           const total = Number((data.faturamento as number) || 0);
           previews.push({
             id: id,
@@ -806,10 +912,11 @@ export default function AdminResidenciesPage() {
 
               <div className="space-y-3">
                 {[
+                  { id: "clientes", label: "Clientes cadastrados", desc: "Lista todos os clientes que se cadastraram no site." },
                   { id: "vendas", label: "Vendas (pedidos pagos)", desc: "Lista todos os pedidos pagos com dados do cliente." },
-                  { id: "faturamento", label: "Faturamento total", desc: "Soma de todos os pedidos pagos no sistema." },
-                  { id: "artes-vendidas", label: "Artes vendidas por designer", desc: "Quanto cada designer vendeu em pedidos pagos." },
-                  { id: "pagamentos-designers", label: "Pagamentos para designers", desc: "Relatório de pagamentos aos designers colaboradores." },
+                  { id: "artes-totais", label: "Artes totais", desc: "Total de artes disponíveis no catálogo." },
+                  { id: "artes-ultimas", label: "Últimas artes", desc: "As últimas artes adicionadas ao catálogo." },
+                  { id: "designers", label: "Designers cadastrados", desc: "Lista todos os designers colaboradores cadastrados." },
                 ].map((r) => (
                   <label
                     key={r.id}
