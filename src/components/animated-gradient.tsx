@@ -1,30 +1,28 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation"; // 👈 Importa o leitor de rotas
 
 const CONFIG = {
   speed: 0.55,
   startDate: new Date("2024-01-01"),
-  colors1: [
-    [80, 55, 120],
-    [50, 65, 145],
-    [40, 50, 100],
-    [90, 60, 130],
-    [60, 70, 115],
+  colors1: [,
+ ,
+ ,
+ ,
+ ,
   ],
-  colors2: [
-    [220, 80, 95],
-    [210, 90, 110],
-    [230, 70, 85],
-    [200, 85, 100],
-    [240, 75, 90],
+  colors2: [,
+ ,
+ ,
+ ,
+ ,
   ],
-  colors3: [
-    [50, 90, 120],
-    [40, 100, 135],
-    [60, 85, 110],
-    [35, 95, 125],
-    [55, 80, 115],
+  colors3: [,
+ ,
+ ,
+ ,
+ ,
   ],
   swirlAmp: 1.35,
   swirlFreq: 0.38,
@@ -38,8 +36,14 @@ export default function AnimatedGradient() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number | null>(null);
   const tRef = useRef(0);
+  const pathname = usePathname(); // 👈 Pega a URL atual do navegador
+
+  // Se a rota começar com /admin, esconde o componente completamente
+  const isAdminRoute = pathname?.startsWith("/admin");
 
   useEffect(() => {
+    if (isAdminRoute) return; // Se for admin, não inicia a animação
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d", { alpha: false, willReadFrequently: false });
@@ -54,11 +58,13 @@ export default function AnimatedGradient() {
     raf = requestAnimationFrame(frame);
     animRef.current = raf;
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [isAdminRoute]);
 
   useEffect(() => {
+    if (isAdminRoute) return; // Se for admin, pula o resize observer
+
+    const canvas = canvasRef.current;
     const ro = new ResizeObserver(() => {
-      const canvas = canvasRef.current;
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
@@ -71,10 +77,14 @@ export default function AnimatedGradient() {
         ctx.imageSmoothingQuality = "high";
       }
     });
-    const canvas = canvasRef.current;
     if (canvas) ro.observe(canvas);
     return () => ro.disconnect();
-  }, []);
+  }, [isAdminRoute]);
+
+  // Se for uma página do painel admin, não renderiza nada na tela
+  if (isAdminRoute) {
+    return null;
+  }
 
   return (
     <canvas
@@ -101,7 +111,6 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
   ctx.clearRect(0, 0, cw, ch);
 
   const baseTime = t * 0.03;
-  const sec = (new Date().getTime() / 1000) % 60;
 
   for (let y = 0; y < ch; y += 2) {
     for (let x = 0; x < cw; x += 2) {

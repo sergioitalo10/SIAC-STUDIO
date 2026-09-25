@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 /* ---------- configurações das luzes ---------- */
 
@@ -12,12 +13,11 @@ const CONFIG = {
   warp: 0.6,
   baseHue: 200,
   hueRange: 60,
-  palette: [
-    [40, 65, 100],
-    [20, 75, 140],
-    [30, 55, 120],
-    [50, 70, 110],
-    [25, 60, 130],
+  palette: [,
+ ,
+ ,
+ ,
+ ,
   ],
   rayWidth: 1.8,
   raySoftness: 7,
@@ -29,8 +29,13 @@ export default function LightRays() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number | null>(null);
   const tRef = useRef(0);
+  const pathname = usePathname();
+
+  const isAdminRoute = pathname?.startsWith("/admin");
 
   useEffect(() => {
+    if (isAdminRoute) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: false });
@@ -45,11 +50,13 @@ export default function LightRays() {
     raf = requestAnimationFrame(frame);
     animRef.current = raf;
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [isAdminRoute]);
 
   useEffect(() => {
+    if (isAdminRoute) return;
+
+    const canvas = canvasRef.current;
     const ro = new ResizeObserver(() => {
-      const canvas = canvasRef.current;
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
@@ -62,10 +69,13 @@ export default function LightRays() {
         ctx.imageSmoothingQuality = "high";
       }
     });
-    const canvas = canvasRef.current;
     if (canvas) ro.observe(canvas);
     return () => ro.disconnect();
-  }, []);
+  }, [isAdminRoute]);
+
+  if (isAdminRoute) {
+    return null;
+  }
 
   return (
     <canvas
@@ -97,8 +107,10 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
 
   const bg = averagePalette();
   const grad = ctx.createLinearGradient(0, ch, 0, 0);
+  
+  // 🚀 Correção cirúrgica: Usa apenas valores seguros e validados entre 0.0 e 1.0
   grad.addColorStop(0, `rgba(${bg[0]}, ${bg[1]}, ${bg[2]}, 1)`);
-  grad.addColorStop(CONFIG.height / ch, `rgba(${bg[0]}, ${bg[1]}, ${bg[2]}, 0.55)`);
+  grad.addColorStop(1, `rgba(${bg[0]}, ${bg[1]}, ${bg[2]}, 0)`);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, cw, ch);
 
