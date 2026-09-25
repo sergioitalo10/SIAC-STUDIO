@@ -74,6 +74,9 @@ export default function Home() {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const imgContainerRef = useRef<HTMLDivElement>(null);
 
+  // ESTADO PARA MENU DE CATEGORIAS NO HEADER
+  const [categoriasMenuAberto, setCategoriasMenuAberto] = useState(false);
+
   const { addToCart } = useCart();
 
   // ROTAÇÃO AUTOMÁTICA DOS BANNERS (5 SEGUNDOS)
@@ -221,12 +224,54 @@ export default function Home() {
             >
               Catálogo
             </button>
-            <button
-              onClick={() => filtrarPorMenu("Interclasses")}
-              className="hover:text-blue-500 transition text-left"
+            <div
+              className="relative inline-block"
+              onMouseEnter={() => setCategoriasMenuAberto(true)}
+              onMouseLeave={() => setCategoriasMenuAberto(false)}
             >
-              Categorias
-            </button>
+              <button
+                onClick={() => filtrarPorMenu("Todas")}
+                className="hover:text-blue-500 transition text-left"
+              >
+                Categorias
+                <span className="text-[10px] ml-1">▼</span>
+              </button>
+
+              {categoriasMenuAberto && (
+                <div className="absolute left-0 top-full z-40 pt-1.5">
+                  <div className="w-48 rounded-xl border border-gray-800 bg-gray-950 p-1.5 shadow-2xl backdrop-blur-lg">
+                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                      Selecione uma categoria
+                    </p>
+                    {["Interclasses", "Futebo", "Treceirão", "Voley", "Basquete", "Os Crias", "Ciclismo"].map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          filtrarPorMenu(cat);
+                          setCategoriasMenuAberto(false);
+                        }}
+                        className={`w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                          categoriaSelecionada === cat
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        filtrarPorMenu("Todas");
+                        setCategoriasMenuAberto(false);
+                      }}
+                      className="w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
+                    >
+                      Todas as Categorias
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               onClick={() => filtrarPorMenu("Lançamentos")}
               className="hover:text-blue-500 transition text-left"
