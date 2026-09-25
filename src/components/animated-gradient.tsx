@@ -1,28 +1,31 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation"; // 👈 Importa o leitor de rotas
+import { usePathname } from "next/navigation";
 
 const CONFIG = {
   speed: 0.55,
   startDate: new Date("2024-01-01"),
-  colors1: [,
- ,
- ,
- ,
- ,
+  colors1: [
+    [85, 180, 255],
+    [140, 210, 255],
+    [180, 230, 255],
+    [220, 240, 255],
+    [255, 240, 220],
   ],
-  colors2: [,
- ,
- ,
- ,
- ,
+  colors2: [
+    [255, 100, 100],
+    [255, 150, 100],
+    [255, 200, 100],
+    [255, 150, 50],
+    [255, 100, 50],
   ],
-  colors3: [,
- ,
- ,
- ,
- ,
+  colors3: [
+    [100, 100, 255],
+    [100, 150, 255],
+    [100, 200, 255],
+    [50, 150, 255],
+    [0, 100, 255],
   ],
   swirlAmp: 1.35,
   swirlFreq: 0.38,
@@ -36,13 +39,12 @@ export default function AnimatedGradient() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number | null>(null);
   const tRef = useRef(0);
-  const pathname = usePathname(); // 👈 Pega a URL atual do navegador
+  const pathname = usePathname();
 
-  // Se a rota começar com /admin, esconde o componente completamente
   const isAdminRoute = pathname?.startsWith("/admin");
 
   useEffect(() => {
-    if (isAdminRoute) return; // Se for admin, não inicia a animação
+    if (isAdminRoute) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -61,7 +63,7 @@ export default function AnimatedGradient() {
   }, [isAdminRoute]);
 
   useEffect(() => {
-    if (isAdminRoute) return; // Se for admin, pula o resize observer
+    if (isAdminRoute) return;
 
     const canvas = canvasRef.current;
     const ro = new ResizeObserver(() => {
@@ -81,7 +83,6 @@ export default function AnimatedGradient() {
     return () => ro.disconnect();
   }, [isAdminRoute]);
 
-  // Se for uma página do painel admin, não renderiza nada na tela
   if (isAdminRoute) {
     return null;
   }
@@ -143,9 +144,15 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
       const s1 = Math.sin(tf * Math.PI * 2 * 0.7 + noise);
       const s2 = Math.sin(tf * Math.PI * 2 * 1.1 + noise * 0.7 + 1.2);
 
-      const swatch1 = CONFIG.colors1[Math.floor((s1 * 0.5 + 0.5) * CONFIG.colors1.length) % CONFIG.colors1.length];
-      const swatch2 = CONFIG.colors2[Math.floor((s2 * 0.5 + 0.5) * CONFIG.colors2.length) % CONFIG.colors2.length];
-      const swatch3 = CONFIG.colors3[Math.floor((s1 * 0.3 + s2 * 0.3 + 0.5) * CONFIG.colors3.length) % CONFIG.colors3.length];
+      const idx1 = Math.floor((s1 * 0.5 + 0.5) * CONFIG.colors1.length) % CONFIG.colors1.length;
+      const idx2 = Math.floor((s2 * 0.5 + 0.5) * CONFIG.colors2.length) % CONFIG.colors2.length;
+      const idx3 = Math.floor((s1 * 0.3 + s2 * 0.3 + 0.5) * CONFIG.colors3.length) % CONFIG.colors3.length;
+
+      const swatch1 = CONFIG.colors1[idx1];
+      const swatch2 = CONFIG.colors2[idx2];
+      const swatch3 = CONFIG.colors3[idx3];
+
+      if (!swatch1 || !swatch2 || !swatch3) continue;
 
       const mix1 = 0.5 + s1 * 0.15;
       const mix2 = 0.4 + s2 * 0.12;

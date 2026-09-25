@@ -274,48 +274,80 @@ export default function AdminDashboard() {
 
       <div style={{
         display: "flex",
-        gap: "15px",
+        gap: "10px",
         marginBottom: "20px",
         flexWrap: "wrap",
+        alignItems: "center",
       }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={showClientes}
-            onChange={(e) => setShowClientes(e.target.checked)}
-          />
-          <span>Clientes</span>
-        </label>
+        <span style={{ color: "#94a3b8", marginRight: "5px", fontSize: "14px" }}>Relatórios:</span>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={showVendas}
-            onChange={(e) => setShowVendas(e.target.checked)}
-          />
-          <span>Vendas</span>
-        </label>
+        <button
+          onClick={() => setShowClientes(!showClientes)}
+          style={{
+            padding: "8px 16px",
+            background: showClientes ? "#2563eb" : "#1a1a1a",
+            color: showClientes ? "#fff" : "#94a3b8",
+            border: "1px solid " + (showClientes ? "#3b82f6" : "#333"),
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "14px",
+          }}
+        >
+          {showClientes ? "✓ Clientes" : "Clientes"}
+        </button>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={showArtes}
-            onChange={(e) => setShowArtes(e.target.checked)}
-          />
-          <span>Artes</span>
-        </label>
+        <button
+          onClick={() => setShowVendas(!showVendas)}
+          style={{
+            padding: "8px 16px",
+            background: showVendas ? "#2563eb" : "#1a1a1a",
+            color: showVendas ? "#fff" : "#94a3b8",
+            border: "1px solid " + (showVendas ? "#3b82f6" : "#333"),
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "14px",
+          }}
+        >
+          {showVendas ? "✓ Vendas" : "Vendas"}
+        </button>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={showDesigners}
-            onChange={(e) => setShowDesigners(e.target.checked)}
-          />
-          <span style={{ color: "#a78bfa" }}>Designers</span>
-        </label>
+        <button
+          onClick={() => setShowArtes(!showArtes)}
+          style={{
+            padding: "8px 16px",
+            background: showArtes ? "#2563eb" : "#1a1a1a",
+            color: showArtes ? "#fff" : "#94a3b8",
+            border: "1px solid " + (showArtes ? "#3b82f6" : "#333"),
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "14px",
+          }}
+        >
+          {showArtes ? "✓ Artes" : "Artes"}
+        </button>
+
+        <button
+          onClick={() => setShowDesigners(!showDesigners)}
+          style={{
+            padding: "8px 16px",
+            background: showDesigners ? "#2563eb" : "#1a1a1a",
+            color: showDesigners ? "#fff" : "#94a3b8",
+            border: "1px solid " + (showDesigners ? "#3b82f6" : "#333"),
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "14px",
+          }}
+        >
+          {showDesigners ? "✓ Designers" : "Designers"}
+        </button>
 
         <button
           onClick={gerarRelatorio}
+          disabled={!showClientes && !showVendas && !showArtes && !showDesigners}
           style={{
             padding: "10px 20px",
             background: "#2563eb",
@@ -324,9 +356,10 @@ export default function AdminDashboard() {
             borderRadius: "6px",
             cursor: "pointer",
             fontWeight: "bold",
+            opacity: (!showClientes && !showVendas && !showArtes && !showDesigners) ? 0.5 : 1,
           }}
         >
-          Gerar e Imprimir
+          Imprimir Relatórios
         </button>
       </div>
 
@@ -343,7 +376,124 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Conteúdo das abas */}
+      {/* Relatórios selecionados */}
+      {showClientes && (
+        <div style={{
+          background: "#111",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "20px",
+          marginBottom: "20px",
+        }}>
+          <h2 style={{ color: "#94a3b8", marginBottom: "15px" }}>Clientes Cadastrados</h2>
+          {clientes.length === 0 ? (
+            <p style={{ color: "#666" }}>Nenhum cliente cadastrado</p>
+          ) : (
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {clientes.map(c => (
+                <div key={c.id} style={{
+                  padding: "10px 0",
+                  borderBottom: "1px solid #222",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span><strong>{c.nome}</strong></span>
+                    <span style={{ color: "#666", fontSize: "14px" }}>ID: {c.id}</span>
+                  </div>
+                  <div style={{ color: "#94a3b8", fontSize: "14px", marginTop: "3px" }}>{c.email}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showVendas && (
+        <div style={{
+          background: "#111",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "20px",
+          marginBottom: "20px",
+        }}>
+          <h2 style={{ color: "#4ade80", marginBottom: "15px" }}>Vendas (Pedidos Pagos)</h2>
+          {pedidos.length === 0 ? (
+            <p style={{ color: "#666" }}>Nenhuma venda registrada</p>
+          ) : (
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {pedidos.map(p => (
+                <div key={p.id} style={{
+                  padding: "10px 0",
+                  borderBottom: "1px solid #222",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}>
+                  <div>
+                    <strong style={{ color: "#fff" }}>#{p.id}</strong>
+                    <span style={{ color: "#666", fontSize: "14px", marginLeft: "8px" }}>{p.email}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: "#4ade80", fontWeight: "bold" }}>{formatBrl(p.total)}</span>
+                    <span style={{ color: "#666", fontSize: "14px", marginLeft: "8px" }}>
+                      {formatData(p.criado_em)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showArtes && (
+        <div style={{
+          background: "#111",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "20px",
+          marginBottom: "20px",
+        }}>
+          <h2 style={{ color: "#a78bfa", marginBottom: "15px" }}>Artes no Catálogo</h2>
+          <p style={{ color: "#94a3b8", margin: 0 }}>Total de artes disponíveis para venda: <strong>0</strong></p>
+          <p style={{ color: "#666", fontSize: "14px", marginTop: "8px" }}>
+            (Esta seção mostra o total de artes atualmente no catálogo para venda)
+          </p>
+        </div>
+      )}
+
+      {showDesigners && (
+        <div style={{
+          background: "#111",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "20px",
+          marginBottom: "20px",
+        }}>
+          <h2 style={{ color: "#a78bfa", marginBottom: "15px" }}>Designers Parceiros</h2>
+          {designers.length === 0 ? (
+            <p style={{ color: "#666" }}>Nenhum designer cadastrado</p>
+          ) : (
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {designers.map(d => (
+                <div key={d.id} style={{
+                  padding: "10px 0",
+                  borderBottom: "1px solid #222",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}>
+                  <div>
+                    <strong style={{ color: "#fff" }}>{d.nome}</strong>
+                    <span style={{ color: "#666", fontSize: "14px", marginLeft: "8px" }}>ID: {d.id}</span>
+                  </div>
+                  <div style={{ color: "#94a3b8", fontSize: "14px" }}>{d.email}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Restante do conteúdo */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
