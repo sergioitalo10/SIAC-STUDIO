@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import CartButton from "@/components/CartButton";
+import Sidebar from "@/components/Sidebar";
 import { products, Product } from "@/data/products";
 import type { DesignerProduct } from "@/types/designer";
 import { useCart } from "@/context/CartContext";
@@ -49,6 +50,7 @@ export default function Home() {
   const [produtoEmDestaque, setProdutoEmDestaque] = useState<Product | DesignerProduct | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
   const [usuario, setUsuario] = useState<{ id: number; nome: string; email: string } | null>(null);
+  const [paginaAtual, setPaginaAtual] = useState(1);
 
   // ESTADO DOS BANNERS ROTATIVOS
   const [bannerAtual, setBannerAtual] = useState(0);
@@ -110,6 +112,78 @@ export default function Home() {
     return ["Todas", ...new Set(listaCategorias)];
   }, []);
 
+  // ESTADO PARA SUBMENU DA LISTA HORIZONTAL (marcusdesigner)
+  const [submenuHorizontalAberto, setSubmenuHorizontalAberto] = useState<string | null>(null);
+
+  // DADOS PARA SUBMENUS DE CADA CATEGORIA DA LISTA HORIZONTAL
+  const subcategoriasMap: Record<string, { label: string; color: string }[]> = {
+    "Futebol": [
+      { label: "Brasileirão Série A", color: "bg-blue-600" },
+      { label: "Brasileirão Série B", color: "bg-blue-500" },
+      { label: "Campeonato Paulista", color: "bg-green-600" },
+      { label: "Copa do Brasil", color: "bg-yellow-500" },
+    ],
+    "Voley": [
+      { label: "Vôlei de Praia", color: "bg-cyan-600" },
+      { label: "Vôlei de Quadra", color: "bg-purple-600" },
+      { label: "Vôlei Feminino", color: "bg-pink-500" },
+    ],
+    "Basquete": [
+      { label: "NBB", color: "bg-orange-600" },
+      { label: "Basquete Universitário", color: "bg-orange-500" },
+      { label: "Basquete Amador", color: "bg-gray-600" },
+    ],
+    "Treceirão": [
+      { label: "Treceirão 2025", color: "bg-green-600" },
+      { label: "Modalidade Zero", color: "bg-green-500" },
+    ],
+    "Futsal": [
+      { label: "Futsal de Salão", color: "bg-cyan-600" },
+      { label: "Futsal de Campos", color: "bg-cyan-500" },
+    ],
+    "Os Crias": [
+      { label: "Crianças 3-5 anos", color: "bg-pink-600" },
+      { label: "Crianças 6-8 anos", color: "bg-pink-500" },
+      { label: "Crianças 9-12 anos", color: "bg-pink-400" },
+    ],
+    "Ciclismo": [
+      { label: "MTB", color: "bg-teal-600" },
+      { label: "Road Bike", color: "bg-teal-500" },
+      { label: "BMX", color: "bg-teal-400" },
+    ],
+    "Lançamentos": [
+      { label: "Mascotes Premium", color: "bg-gray-700" },
+      { label: "Kits Especiais", color: "bg-gray-600" },
+    ],
+    "Estudantil": [
+      { label: "Calouros", color: "bg-red-500" },
+      { label: "Formandos", color: "bg-red-600" },
+      { label: "Interclasse", color: "bg-red-400" },
+    ],
+    "Amen": [
+      { label: "AMEN 2025", color: "bg-purple-600" },
+      { label: "AMEN Treinamento", color: "bg-purple-500" },
+    ],
+    "Promoções": [
+      { label: "Descontos Especiais", color: "bg-rose-600" },
+      { label: "Ofertas Relâmpago", color: "bg-rose-500" },
+    ],
+    "Gratuito": [
+      { label: "Mascotes Gratuitos", color: "bg-green-500" },
+      { label: "Templates", color: "bg-green-400" },
+    ],
+    "Novidades": [
+      { label: "Recém-Lançados", color: "bg-sky-600" },
+      { label: "Atualizações", color: "bg-sky-500" },
+    ],
+    "Interclasses": [
+      { label: "Arara Azul", color: "bg-indigo-600" },
+      { label: "Arara Vermelha", color: "bg-indigo-500" },
+      { label: "Cavaleiro", color: "bg-indigo-400" },
+      { label: "Papagaio", color: "bg-indigo-300" },
+    ],
+  };
+
   const mascotesInterclasses = useMemo(() => {
     const mascotes = products
       .filter((p) => {
@@ -145,6 +219,15 @@ export default function Home() {
       return correspondeCategoria && correspondeMascote && correspondeBusca;
     });
   }, [busca, categoriaSelecionada, mascoteSelecionado]);
+
+  // Cálculo de paginação
+  const ITENS_POR_PAGINA = 21;
+  const totalPaginas = Math.ceil(produtosFiltrados.length / ITENS_POR_PAGINA);
+  const produtosParaPagina = useMemo(() => {
+    const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+    const fim = paginaAtual * ITENS_POR_PAGINA;
+    return produtosFiltrados.slice(inicio, fim);
+  }, [produtosFiltrados, paginaAtual]);
 
   function selecionarCategoria(cat: string) {
     setCategoriaSelecionada(cat);
@@ -216,67 +299,28 @@ export default function Home() {
             </span>
           </Link>
 
-          {/* NAVEGAÇÃO COM FILTRO AUTOMÁTICO DO CABEÇALHO */}
-          <nav className="hidden gap-8 md:flex text-sm font-semibold tracking-wide">
-            <button
-              onClick={() => filtrarPorMenu("Todas")}
-              className="hover:text-blue-500 transition text-left"
-            >
-              Catálogo
+          {/* MENU HORIZONTAL COMPLETO (estilo marcusdesigner) */}
+          <nav className="hidden md:flex items-center gap-5 text-sm font-semibold tracking-wide">
+            <button onClick={() => filtrarPorMenu("Todas")} className="text-blue-500 border-b-2 border-blue-500 pb-1 whitespace-nowrap">
+              LOJA
             </button>
-            <div
-              className="relative inline-block"
-              onMouseEnter={() => setCategoriasMenuAberto(true)}
-              onMouseLeave={() => setCategoriasMenuAberto(false)}
-            >
-              <button
-                onClick={() => filtrarPorMenu("Todas")}
-                className="hover:text-blue-500 transition text-left"
-              >
-                Categorias
-                <span className="text-[10px] ml-1">▼</span>
-              </button>
-
-              {categoriasMenuAberto && (
-                <div className="absolute left-0 top-full z-40 pt-1.5">
-                  <div className="w-48 rounded-xl border border-gray-800 bg-gray-950 p-1.5 shadow-2xl backdrop-blur-lg">
-                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                      Selecione uma categoria
-                    </p>
-                    {["Interclasses", "Futebo", "Treceirão", "Voley", "Basquete", "Os Crias", "Ciclismo"].map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => {
-                          filtrarPorMenu(cat);
-                          setCategoriasMenuAberto(false);
-                        }}
-                        className={`w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                          categoriaSelecionada === cat
-                            ? "bg-blue-600 text-white"
-                            : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => {
-                        filtrarPorMenu("Todas");
-                        setCategoriasMenuAberto(false);
-                      }}
-                      className="w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-                    >
-                      Todas as Categorias
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => filtrarPorMenu("Lançamentos")}
-              className="hover:text-blue-500 transition text-left"
-            >
-              Lançamentos
+            <button onClick={() => filtrarPorMenu("FAQ")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+              FAQ
+            </button>
+            <button onClick={() => filtrarPorMenu("SUPORTE")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+              SUPORTE
+            </button>
+            <button onClick={() => filtrarPorMenu("SUGERIR ARTE")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+              SUGERIR ARTE
+            </button>
+            <button onClick={() => filtrarPorMenu("QUEM SOMOS")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+              QUEM SOMOS
+            </button>
+            <button onClick={() => filtrarPorMenu("GRATIS")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+              GRÁTIS
+            </button>
+            <button onClick={() => filtrarPorMenu("MEUS DOWNLOADS")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+              MEUS DOWNLOADS
             </button>
           </nav>
 
@@ -309,10 +353,22 @@ export default function Home() {
                 >
                   Criar conta
                 </Link>
+                <button className="p-1.5 rounded-full hover:bg-gray-800 transition text-gray-400 hover:text-red-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
               </div>
             )}
-
             <CartButton />
+          </div>
+
+          {/* Bandeiras de idioma (estilo marcusdesigner) */}
+          <div className="hidden md:flex items-center gap-1 ml-4">
+            <span className="text-[10px] text-gray-500">/</span>
+            <img src="https://flagcdn.com/w40/br.png" alt="PT" className="w-5 h-5 rounded-sm" />
+            <img src="https://flagcdn.com/w40/es.png" alt="ES" className="w-5 h-5 rounded-sm ml-1" />
+            <img src="https://flagcdn.com/w40/us.png" alt="EN" className="w-5 h-5 rounded-sm ml-1" />
           </div>
 
         </div>
@@ -503,6 +559,47 @@ export default function Home() {
             })}
           </div>
 
+          {/* LISTA HORIZONTAL DE CATEGORIAS (estilo marcusdesigner) */}
+          <div className="my-4 overflow-x-auto scrollbar-thin">
+            <div className="flex gap-2 min-w-max px-1 py-1">
+              {[
+                { label: "Estudantil", color: "bg-red-500" },
+                { label: "Futebol", color: "bg-blue-600" },
+                { label: "Futsal", color: "bg-cyan-600" },
+                { label: "Amen", color: "bg-purple-600" },
+                { label: "Treceirão", color: "bg-green-600" },
+                { label: "Voley", color: "bg-yellow-500" },
+                { label: "Basquete", color: "bg-orange-500" },
+                { label: "Os Crias", color: "bg-pink-600" },
+                { label: "Ciclismo", color: "bg-teal-600" },
+                { label: "Interclasses", color: "bg-indigo-600" },
+                { label: "Lançamentos", color: "bg-gray-800" },
+                { label: "Promoções", color: "bg-rose-600" },
+                { label: "Gratuito", color: "bg-green-500" },
+                { label: "Novidades", color: "bg-sky-600" },
+              ].map((cat) => (
+                <button
+                  key={cat.label}
+                  onClick={() => filtrarPorMenu(cat.label)}
+                  className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-bold tracking-wider transition ${
+                    categoriaSelecionada === cat.label
+                      ? "text-black shadow-md"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                  style={
+                    {
+                      // Maintain the same colors as marcusdesigner
+                      backgroundColor: categoriaSelecionada === cat.label ? undefined : undefined
+                    } as React.CSSProperties
+                  }
+                >
+                  <span className={`inline-block h-2 w-2 rounded-full mr-1.5 ${cat.color}`}></span>
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="relative w-full md:w-64">
             <input
               id="busca"
@@ -522,7 +619,6 @@ export default function Home() {
 
       {/* CATÁLOGO DE PRODUTOS */}
       <section id="produtos" className="mx-auto max-w-7xl px-6 pt-2 pb-6">
-
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xl font-bold tracking-tight">
             {mascoteSelecionado
@@ -533,28 +629,85 @@ export default function Home() {
           </h2>
 
           <p className="text-xs font-medium text-gray-400">
-            {produtosFiltrados.length}{" "}
+            {produtosFiltrados.length > 21
+              ? `21 de ${produtosFiltrados.length} modelos`
+              : `${produtosFiltrados.length} `}
             {produtosFiltrados.length === 1 ? "modelo" : "modelos"}
           </p>
         </div>
 
         {produtosFiltrados.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {produtosFiltrados.map((product) => (
-              <div 
-                key={product.id} 
-                onClick={() => setProdutoEmDestaque(product)}
-                className="cursor-pointer transition transform hover:scale-[1.02]"
-              >
-                <ProductCard
-                  id={product.id}
-                  nome={product.nome}
-                  categoria={product.categoria}
-                  preco={product.preco}
-                  imagem={product.imagem}
-                />
+          <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-6">
+            {/* SIDEBAR DE CATEGORIAS — dentro do grid dos cards */}
+            <div className="hidden lg:block">
+              <Sidebar
+                categoriaSelecionada={categoriaSelecionada}
+                mascoteSelecionado={mascoteSelecionado}
+                onSelecionarCategoria={selecionarCategoria}
+                onSelecionarMascote={selecionarMascote}
+                mascotesInterclasses={mascotesInterclasses}
+              />
+            </div>
+
+            {/* GRID DE CARDS */}
+            <div className="min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {produtosParaPagina.map((product) => (
+                  <div
+                    key={product.id}
+                    onClick={() => setProdutoEmDestaque(product)}
+                    className="cursor-pointer transition transform hover:scale-[1.02]"
+                  >
+                    <ProductCard
+                      id={product.id}
+                      nome={product.nome}
+                      categoria={product.categoria}
+                      preco={product.preco}
+                      imagem={product.imagem}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+              {totalPaginas > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-1.5">
+                  <button
+                    onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+                    disabled={paginaAtual === 1}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition ${
+                      paginaAtual === 1
+                        ? "border-gray-800 bg-gray-900/50 text-gray-600 cursor-not-allowed"
+                        : "border-gray-800 bg-gray-900 text-gray-300 hover:border-blue-500 hover:text-blue-400"
+                    }`}
+                  >
+                    ‹
+                  </button>
+                  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setPaginaAtual(num)}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition ${
+                        paginaAtual === num
+                          ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                          : "border-gray-800 bg-gray-900 text-gray-300 hover:border-blue-500 hover:text-blue-400"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+                    disabled={paginaAtual === totalPaginas}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition ${
+                      paginaAtual === totalPaginas
+                        ? "border-gray-800 bg-gray-900/50 text-gray-600 cursor-not-allowed"
+                        : "border-gray-800 bg-gray-900 text-gray-300 hover:border-blue-500 hover:text-blue-400"
+                    }`}
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="rounded-xl border border-gray-800 bg-gray-950 px-6 py-12 text-center">

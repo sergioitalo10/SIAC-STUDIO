@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | SIAC STUDIO",
   },
   description:
-    "Arte digital 100% vetorizada para sublimação. Baixe arquivos CDR, PNG e RAR de alta resolução com mascotes e personagens exclusivos.",
+    "Arte digital 100% vetorizada para sublimação. Baixe arquivos CDR, PDF e FONTE de alta resolução com mascotes e personagens exclusivos.",
   keywords: [
     "artes para sublimação",
     "sublimação",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "SIAC STUDIO" }],
   creator: "SIAC STUDIO",
-  metadataBase: new URL("https://siac-studio.vercel.app"),
+  metadataBase: new URL("https://vercel.app"),
   openGraph: {
     type: "website",
     locale: "pt_BR",
