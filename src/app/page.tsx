@@ -52,6 +52,16 @@ export default function Home() {
   const [usuario, setUsuario] = useState<{ id: number; nome: string; email: string } | null>(null);
   const [paginaAtual, setPaginaAtual] = useState(1);
 
+  // ESTADO DO CARROSSEL DE CATEGORIAS
+  const [categoriaCarouselAtual, setCategoriaCarouselAtual] = useState(0);
+  const categoriasCarousel = useMemo(() => {
+    const lista = ["Todas", "Interclasses", "Estudantil", "Futebol", "Treceirão", "Voley", "Basquete", "Os Crias", "Ciclismo", "Lançamentos", "Promoções"];
+    const pagina = categoriaCarouselAtual;
+    const inicio = pagina * 5;
+    const fim = Math.min(inicio + 5, lista.length);
+    return lista.slice(inicio, fim);
+  }, [categoriaCarouselAtual]);
+
   // ESTADO DOS BANNERS ROTATIVOS
   const [bannerAtual, setBannerAtual] = useState(0);
   const [pausarRotacao, setPausarRotacao] = useState(false);
@@ -104,12 +114,20 @@ export default function Home() {
     }
   }, []);
 
-  // Gera a lista de categorias sem duplicados (suportando arrays de categorias)
-  const categorias = useMemo(() => {
-    const listaCategorias = products.flatMap((product) =>
-      Array.isArray(product.categoria) ? product.categoria : [product.categoria]
-    );
-    return ["Todas", ...new Set(listaCategorias)];
+  // Lista completa de categorias para os botões (independente dos produtos)
+  const todasCategorias = useMemo(() => {
+    return [
+      "Todas",
+      "Interclasses",
+      "Lançamentos",
+      "Futebol",
+      "Treceirão",
+      "Volei",
+      "Basquete",
+      "Os Crias",
+      "Ciclismo",
+      "Promoções",
+    ];
   }, []);
 
   // ESTADO PARA SUBMENU DA LISTA HORIZONTAL (marcusdesigner)
@@ -137,15 +155,6 @@ export default function Home() {
       { label: "Treceirão 2025", color: "bg-green-600" },
       { label: "Modalidade Zero", color: "bg-green-500" },
     ],
-    "Futsal": [
-      { label: "Futsal de Salão", color: "bg-cyan-600" },
-      { label: "Futsal de Campos", color: "bg-cyan-500" },
-    ],
-    "Os Crias": [
-      { label: "Crianças 3-5 anos", color: "bg-pink-600" },
-      { label: "Crianças 6-8 anos", color: "bg-pink-500" },
-      { label: "Crianças 9-12 anos", color: "bg-pink-400" },
-    ],
     "Ciclismo": [
       { label: "MTB", color: "bg-teal-600" },
       { label: "Road Bike", color: "bg-teal-500" },
@@ -160,21 +169,9 @@ export default function Home() {
       { label: "Formandos", color: "bg-red-600" },
       { label: "Interclasse", color: "bg-red-400" },
     ],
-    "Amen": [
-      { label: "AMEN 2025", color: "bg-purple-600" },
-      { label: "AMEN Treinamento", color: "bg-purple-500" },
-    ],
     "Promoções": [
       { label: "Descontos Especiais", color: "bg-rose-600" },
       { label: "Ofertas Relâmpago", color: "bg-rose-500" },
-    ],
-    "Gratuito": [
-      { label: "Mascotes Gratuitos", color: "bg-green-500" },
-      { label: "Templates", color: "bg-green-400" },
-    ],
-    "Novidades": [
-      { label: "Recém-Lançados", color: "bg-sky-600" },
-      { label: "Atualizações", color: "bg-sky-500" },
     ],
     "Interclasses": [
       { label: "Arara Azul", color: "bg-indigo-600" },
@@ -374,71 +371,67 @@ export default function Home() {
         </div>
       </header>
 
-      {/* BANNERS ROTATIVOS (1280x300) */}
-      <section 
+      {/* BANNERS ROTATIVOS (CARROSSEL) */}
+      <section
         className="relative overflow-hidden border-b border-gray-900 bg-gray-950 py-3 md:py-4"
         onMouseEnter={() => setPausarRotacao(true)}
         onMouseLeave={() => setPausarRotacao(false)}
       >
         <div className="mx-auto max-w-7xl px-6">
-          <div 
-            onClick={() => {
-              if (BANNERS[bannerAtual].categoriaAlvo) {
-                selecionarCategoria(BANNERS[bannerAtual].categoriaAlvo);
-              }
-            }}
-            className={`relative w-full aspect-[1280/300] max-h-[280px] overflow-hidden rounded-xl border border-gray-800 bg-gradient-to-r shadow-xl transition-all duration-700 ease-in-out flex items-center justify-center ${
-              BANNERS[bannerAtual].imagemFundo ? "cursor-pointer" : ""
-            }`}
-          >
-            {/* IMAGEM DE FUNDO DO BANNER */}
-            {BANNERS[bannerAtual].imagemFundo && (
-              <img
-                src={BANNERS[bannerAtual].imagemFundo}
-                alt={BANNERS[bannerAtual].titulo || "Banner promocional"}
-                className="absolute inset-0 h-full w-full object-contain md:object-cover z-0"
-              />
-            )}
-
-            {/* GRADIENTE DE SOBREPOSIÇÃO (QUANDO HOUVER TEXTO) */}
-            {BANNERS[bannerAtual].titulo && (
-              <div className={`bg-gradient-to-r ${BANNERS[bannerAtual].corDestaque} absolute inset-0 opacity-60 backdrop-blur-[1px] z-0`} />
-            )}
-
-            {/* CONTEÚDO TEXTUAL */}
-            {(BANNERS[bannerAtual].titulo || BANNERS[bannerAtual].tag) && (
-              <div className="relative z-10 flex flex-col items-center text-center p-4">
-                {BANNERS[bannerAtual].tag && (
-                  <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-blue-400 border border-blue-500/20 uppercase backdrop-blur-md">
-                    {BANNERS[bannerAtual].tag}
-                  </span>
-                )}
-
-                {BANNERS[bannerAtual].titulo && (
-                  <h1 className="mt-2 text-xl font-black tracking-tight text-white md:text-2xl drop-shadow-md">
-                    {BANNERS[bannerAtual].titulo}
-                  </h1>
-                )}
-
-                {BANNERS[bannerAtual].descricao && (
-                  <p className="mt-1 max-w-lg text-xs text-gray-200 drop-shadow">
-                    {BANNERS[bannerAtual].descricao}
-                  </p>
-                )}
-
-                {BANNERS[bannerAtual].botaoTexto && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      selecionarCategoria(BANNERS[bannerAtual].categoriaAlvo);
-                    }}
-                    className="mt-3.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/30"
-                  >
-                    {BANNERS[bannerAtual].botaoTexto}
-                  </button>
-                )}
-              </div>
-            )}
+          <div className="relative w-full overflow-hidden rounded-xl border border-gray-800 bg-gradient-to-r shadow-xl">
+            {/* SLIDES DO CARROSSEL */}
+            <div
+              className="flex transition-transform duration-700 ease-in-out will-change-transform"
+              style={{ transform: `translateX(-${bannerAtual * 100}%)` }}
+            >
+              {BANNERS.map((banner) => (
+                <div
+                  key={banner.id}
+                  className="relative flex w-full shrink-0 items-center justify-center aspect-[1280/300] max-h-[280px]"
+                >
+                  {banner.imagemFundo && (
+                    <img
+                      src={banner.imagemFundo}
+                      alt={banner.titulo || "Banner promocional"}
+                      className="h-full w-full object-contain md:object-cover"
+                    />
+                  )}
+                  {banner.titulo && (
+                    <div className={`absolute inset-0 ${banner.corDestaque} opacity-60 backdrop-blur-[1px]`} />
+                  )}
+                  {(banner.tag || banner.titulo) && (
+                    <div className="relative z-10 flex flex-col items-center text-center p-4">
+                      {banner.tag && (
+                        <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-blue-400 border border-blue-500/20 uppercase backdrop-blur-md">
+                          {banner.tag}
+                        </span>
+                      )}
+                      {banner.titulo && (
+                        <h1 className="mt-2 text-xl font-black tracking-tight text-white md:text-2xl drop-shadow-md">
+                          {banner.titulo}
+                        </h1>
+                      )}
+                      {banner.descricao && (
+                        <p className="mt-1 max-w-lg text-xs text-gray-200 drop-shadow">
+                          {banner.descricao}
+                        </p>
+                      )}
+                      {banner.botaoTexto && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selecionarCategoria(banner.categoriaAlvo);
+                          }}
+                          className="mt-3.5 rounded-lg bg-blue-600 px-5 py-2 text-xs font-bold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/30"
+                        >
+                          {banner.botaoTexto}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
 
             {/* BOTÃO ANTERIOR */}
             <button
@@ -448,7 +441,7 @@ export default function Home() {
               }}
               className="absolute left-2.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-800 bg-black/60 text-xs text-gray-300 backdrop-blur-md transition hover:bg-blue-600 hover:text-white"
             >
-              ‹
+              
             </button>
 
             {/* BOTÃO PRÓXIMO */}
@@ -459,10 +452,10 @@ export default function Home() {
               }}
               className="absolute right-2.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-800 bg-black/60 text-xs text-gray-300 backdrop-blur-md transition hover:bg-blue-600 hover:text-white"
             >
-              ›
+            
             </button>
 
-            {/* INDICADORES (BOLINHAS) */}
+            {/* INDICADORES */}
             <div className="absolute bottom-2.5 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
               {BANNERS.map((_, index) => (
                 <button
@@ -477,7 +470,6 @@ export default function Home() {
                 />
               ))}
             </div>
-
           </div>
         </div>
       </section>
@@ -487,7 +479,7 @@ export default function Home() {
         <div className="flex flex-col-reverse gap-3 rounded-xl border border-gray-800/80 bg-gray-950/60 p-2.5 md:flex-row md:items-center md:justify-between">
           
           <div className="flex items-center gap-2 overflow-visible pb-1 md:pb-0">
-            {categorias.map((categoria) => {
+            {todasCategorias.map((categoria) => {
               const selecionada = categoriaSelecionada === categoria && !mascoteSelecionado;
               const isInterclasses = categoria === "Interclasses";
 
@@ -501,14 +493,14 @@ export default function Home() {
                   >
                     <button
                       onClick={() => selecionarCategoria("Interclasses")}
-                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition ${
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-bold transition ${
                         categoriaSelecionada === "Interclasses"
-                          ? "border-blue-500 bg-blue-600 text-white"
-                          : "border-gray-800 bg-gray-900 text-gray-300 hover:border-blue-500 hover:text-white"
+                          ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                          : "border-gray-900 bg-gray-950 text-gray-400 hover:border-blue-500 hover:text-white hover:bg-gray-900"
                       }`}
                     >
                       <span>Interclasses</span>
-                      <span className="text-[10px]">▼</span>
+                      <span className="text-[8px] text-gray-600">▼</span>
                     </button>
 
                     {menuAberto && (
@@ -529,8 +521,8 @@ export default function Home() {
                               onClick={() => selecionarMascote(mascote)}
                               className={`w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
                                 mascoteSelecionado === mascote
-                                  ? "bg-blue-600 text-white"
-                                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                                  ? "bg-blue-600/90 text-white border-l-2 border-blue-500 pl-3"
+                                  : "text-gray-500 hover:bg-gray-900 hover:text-gray-300 border-l-2 border-transparent pl-3"
                               }`}
                             >
                               {mascote}
@@ -547,10 +539,10 @@ export default function Home() {
                 <button
                   key={categoria}
                   onClick={() => selecionarCategoria(categoria)}
-                  className={`whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition ${
+                  className={`whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-bold transition ${
                     selecionada
-                      ? "border-blue-500 bg-blue-600 text-white"
-                      : "border-gray-800 bg-gray-900 text-gray-300 hover:border-blue-500 hover:text-white"
+                      ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                      : "border-gray-900 bg-gray-950 text-gray-400 hover:border-blue-500 hover:text-white hover:bg-gray-900"
                   }`}
                 >
                   {categoria}
@@ -559,48 +551,8 @@ export default function Home() {
             })}
           </div>
 
-          {/* LISTA HORIZONTAL DE CATEGORIAS (estilo marcusdesigner) */}
-          <div className="my-4 overflow-x-auto scrollbar-thin">
-            <div className="flex gap-2 min-w-max px-1 py-1">
-              {[
-                { label: "Estudantil", color: "bg-red-500" },
-                { label: "Futebol", color: "bg-blue-600" },
-                { label: "Futsal", color: "bg-cyan-600" },
-                { label: "Amen", color: "bg-purple-600" },
-                { label: "Treceirão", color: "bg-green-600" },
-                { label: "Voley", color: "bg-yellow-500" },
-                { label: "Basquete", color: "bg-orange-500" },
-                { label: "Os Crias", color: "bg-pink-600" },
-                { label: "Ciclismo", color: "bg-teal-600" },
-                { label: "Interclasses", color: "bg-indigo-600" },
-                { label: "Lançamentos", color: "bg-gray-800" },
-                { label: "Promoções", color: "bg-rose-600" },
-                { label: "Gratuito", color: "bg-green-500" },
-                { label: "Novidades", color: "bg-sky-600" },
-              ].map((cat) => (
-                <button
-                  key={cat.label}
-                  onClick={() => filtrarPorMenu(cat.label)}
-                  className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-bold tracking-wider transition ${
-                    categoriaSelecionada === cat.label
-                      ? "text-black shadow-md"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}
-                  style={
-                    {
-                      // Maintain the same colors as marcusdesigner
-                      backgroundColor: categoriaSelecionada === cat.label ? undefined : undefined
-                    } as React.CSSProperties
-                  }
-                >
-                  <span className={`inline-block h-2 w-2 rounded-full mr-1.5 ${cat.color}`}></span>
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative w-full md:w-64">
+          {/* BUSCA */}
+          <div className="relative w-full sm:w-auto md:w-64">
             <input
               id="busca"
               type="search"
@@ -613,7 +565,6 @@ export default function Home() {
               🔍
             </span>
           </div>
-
         </div>
       </section>
 
@@ -653,19 +604,15 @@ export default function Home() {
             <div className="min-w-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                 {produtosParaPagina.map((product) => (
-                  <div
+                  <ProductCard
                     key={product.id}
+                    id={product.id}
+                    nome={product.nome}
+                    categoria={product.categoria}
+                    preco={product.preco}
+                    imagem={product.imagem}
                     onClick={() => setProdutoEmDestaque(product)}
-                    className="cursor-pointer transition transform hover:scale-[1.02]"
-                  >
-                    <ProductCard
-                      id={product.id}
-                      nome={product.nome}
-                      categoria={product.categoria}
-                      preco={product.preco}
-                      imagem={product.imagem}
-                    />
-                  </div>
+                  />
                 ))}
               </div>
               {totalPaginas > 1 && (
@@ -859,17 +806,15 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {designerProducts.map((product) => (
-              <div
-                key={`designer-${product.artwork_id}`}
-                onClick={() => setProdutoEmDestaque(product)}
-                className="cursor-pointer transition transform hover:scale-[1.02]"
-              >
+              <div key={`designer-${product.artwork_id}`} className="text-center">
                 <ProductCard
+                  key={product.artwork_id}
                   id={product.artwork_id}
                   nome={product.titulo ?? ""}
                   categoria={product.categoria ?? "Outros"}
                   preco={Number(product.preco) || 0}
                   imagem={product.thumbnail_url || product.imagem_url || ""}
+                  onClick={() => setProdutoEmDestaque(product)}
                 />
                 <p className="mt-1 text-[10px] text-gray-500 text-center truncate">
                   por {product.designer_nome ?? ""}

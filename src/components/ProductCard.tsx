@@ -10,9 +10,10 @@ interface ProductCardProps {
   imagem: string;
   arquivo?: string;
   formato?: string; // Formatos de arquivo (CDR, AI, PDF, Fonte)
+  onClick?: () => void;
 }
 
-export default function ProductCard({ id, nome, categoria, preco, imagem, arquivo, formato = "CDR, PDF, Fonte" }: ProductCardProps) {
+export default function ProductCard({ id, nome, categoria, preco, imagem, arquivo, formato = "CDR, PDF, Fonte", onClick }: ProductCardProps) {
   const router = useRouter();
 
   // Formata a categoria com espaçamento adequado se for um array
@@ -49,9 +50,9 @@ export default function ProductCard({ id, nome, categoria, preco, imagem, arquiv
   const nomeComPrefixo = `Arte Camisa Interclasses ${nome}`;
 
   return (
-   <div className="rounded-2xl border border-gray-800 bg-gray-950 overflow-hidden flex flex-col items-center justify-center gap-0.5 hover:border-blue-500/50 transition duration-300 group p-1.5 w-[calc(100%/1.33)]">
+   <div className="rounded-2xl border border-gray-800 bg-gray-950 overflow-hidden flex flex-col items-center justify-center gap-0.5 hover:border-blue-500/50 transition duration-300 group p-1.5 w-[calc(100%/1.33)]" onClick={onClick}>
      <div>
-       <div className="relative h-64 w-full overflow-hidden bg-gray-900">
+       <div className="relative h-56 w-full overflow-hidden bg-gray-900">
           <img
             src={imagem}
             alt={nomeComPrefixo}

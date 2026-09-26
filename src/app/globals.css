@@ -49,23 +49,30 @@ main {
   z-index: 2;
 }
 
-/* scrollbars escuras */
+/* scrollbar escuro */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000;
+  background: #1a1a1a;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+  background: #444444;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #666666;
 }
-* {
-  scrollbar-color: #333 #000;
+
+/* esconder scrollbar do menu de categorias */
+.categorias-scroll::-webkit-scrollbar {
+  display: none;
+}
+.categorias-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* impressão de relatórios */

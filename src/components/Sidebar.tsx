@@ -74,17 +74,13 @@ export default function Sidebar({
     "Interclasses",
     "Estudantil",
     "Futebol",
-    "Futsal",
-    "Amen",
     "Treceirão",
-    "Voley",
+    "Volei",
     "Basquete",
     "Os Crias",
     "Ciclismo",
     "Lançamentos",
     "Promoções",
-    "Gratuito",
-    "Novidades",
   ];
 
   const isInterclasses = categoriaSelecionada === "Interclasses" && !mascoteSelecionado;
@@ -92,19 +88,14 @@ export default function Sidebar({
   return (
     <aside className="hidden lg:block sticky top-20 self-start h-[calc(100vh-6rem)] w-44 flex-shrink-0 overflow-y-auto border-r border-gray-950/90 bg-gray-950/80 backdrop-blur-sm">
       {/* HEADER */}
-      <div className="mx-2 mb-3 flex items-center gap-1.5 rounded-lg bg-blue-600 px-2 py-1.5 shadow-lg shadow-blue-600/20">
-        <span className="bg-white px-1 py-0.5 rounded text-[8px] font-extrabold tracking-tight shadow-inner leading-none">
+      <div className="mx-2 mb-3 flex items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-black px-2 py-1.5 shadow-lg shadow-blue-400/10">
+        <span className="text-white font-extrabold text-[9px] tracking-tight leading-none">
           SIAC
         </span>
-        <span className="text-white font-extrabold text-[10px] tracking-tight leading-none">
+        <span className="text-blue-500 font-extrabold text-[9px] tracking-tight leading-none">
           STUDIO
         </span>
       </div>
-
-      {/* TÍTULO */}
-      <p className="mx-2 mb-2 text-[9px] font-bold uppercase tracking-widest text-gray-600">
-        Navegação
-      </p>
 
       <nav className="mx-2 space-y-1">
         {categorias.map((cat) => {
