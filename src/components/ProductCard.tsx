@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
@@ -8,13 +9,15 @@ interface ProductCardProps {
   categoria: string | string[]; // Suporta 1 ou mais categorias
   preco: number;
   imagem: string;
+  preview2?: string; // Imagem alternativa ao passar o mouse (hover)
   arquivo?: string;
   formato?: string; // Formatos de arquivo (CDR, AI, PDF, Fonte)
   onClick?: () => void;
 }
 
-export default function ProductCard({ id, nome, categoria, preco, imagem, arquivo, formato = "CDR, PDF, Fonte", onClick }: ProductCardProps) {
+export default function ProductCard({ id, nome, categoria, preco, imagem, preview2, arquivo, formato = "CDR, PDF, Fonte", onClick }: ProductCardProps) {
   const router = useRouter();
+  const [isHovered, setIsHovered] = useState(false);
 
   // Formata a categoria com espaçamento adequado se for um array
   const categoriaFormatada = Array.isArray(categoria)
@@ -52,11 +55,11 @@ export default function ProductCard({ id, nome, categoria, preco, imagem, arquiv
   return (
    <div className="rounded-2xl border border-gray-800 bg-gray-950 overflow-hidden flex flex-col items-center justify-center gap-0.5 hover:border-blue-500/50 transition duration-300 group p-1.5 w-[calc(100%/1.33)]" onClick={onClick}>
      <div>
-       <div className="relative h-56 w-full overflow-hidden bg-gray-900">
+       <div className="relative h-56 w-full overflow-hidden bg-gray-900" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
           <img
-            src={imagem}
+            src={isHovered && preview2 ? preview2 : imagem}
             alt={nomeComPrefixo}
-            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+            className="w-full h-full object-cover transition duration-300"
           />
           {/* Faixa de formatos no canto inferior da imagem (igual ao marcusdesigner) */}
           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-black/90 px-2 py-1">

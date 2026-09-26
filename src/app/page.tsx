@@ -297,27 +297,24 @@ export default function Home() {
           </Link>
 
           {/* MENU HORIZONTAL COMPLETO (estilo marcusdesigner) */}
-          <nav className="hidden md:flex items-center gap-5 text-sm font-semibold tracking-wide">
-            <button onClick={() => filtrarPorMenu("Todas")} className="text-blue-500 border-b-2 border-blue-500 pb-1 whitespace-nowrap">
+          <nav className="hidden md:flex items-center gap-3 text-xs font-semibold tracking-wide">
+            <button onClick={() => filtrarPorMenu("Todas")} className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-blue-500 hover:border-blue-500 hover:text-white transition whitespace-nowrap">
               LOJA
             </button>
-            <button onClick={() => filtrarPorMenu("FAQ")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+            <button onClick={() => filtrarPorMenu("FAQ")} className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-gray-400 hover:border-blue-500 hover:text-white transition whitespace-nowrap">
               FAQ
             </button>
-            <button onClick={() => filtrarPorMenu("SUPORTE")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+            <button onClick={() => filtrarPorMenu("SUPORTE")} className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-gray-400 hover:border-blue-500 hover:text-white transition whitespace-nowrap">
               SUPORTE
             </button>
-            <button onClick={() => filtrarPorMenu("SUGERIR ARTE")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+            <button onClick={() => filtrarPorMenu("SUGERIR ARTE")} className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-gray-400 hover:border-blue-500 hover:text-white transition whitespace-nowrap">
               SUGERIR ARTE
             </button>
-            <button onClick={() => filtrarPorMenu("QUEM SOMOS")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+            <button onClick={() => filtrarPorMenu("QUEM SOMOS")} className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-gray-400 hover:border-blue-500 hover:text-white transition whitespace-nowrap">
               QUEM SOMOS
             </button>
-            <button onClick={() => filtrarPorMenu("GRATIS")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
+            <button onClick={() => filtrarPorMenu("GRATIS")} className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-gray-400 hover:border-blue-500 hover:text-white transition whitespace-nowrap">
               GRÁTIS
-            </button>
-            <button onClick={() => filtrarPorMenu("MEUS DOWNLOADS")} className="text-gray-400 hover:text-white transition whitespace-nowrap">
-              MEUS DOWNLOADS
             </button>
           </nav>
 
@@ -334,27 +331,16 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/minha-conta"
-                  className="text-xs font-semibold text-gray-300 hover:text-white transition px-3 py-1.5"
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/20"
                 >
                   Entrar
                 </Link>
                 <Link
-                  href="/area-designer"
-                  className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-purple-500 shadow-md shadow-purple-600/20"
+                  href="/area-designer/cadastro"
+                  className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-500 shadow-md shadow-purple-600/20"
                 >
-                  Área do Designer
+                  Designer, seja parceiro
                 </Link>
-                <Link
-                  href="/minha-conta"
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 shadow-md shadow-blue-600/20"
-                >
-                  Criar conta
-                </Link>
-                <button className="p-1.5 rounded-full hover:bg-gray-800 transition text-gray-400 hover:text-red-400">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </button>
               </div>
             )}
             <CartButton />
@@ -611,6 +597,7 @@ export default function Home() {
                     categoria={product.categoria}
                     preco={product.preco}
                     imagem={product.imagem}
+                    preview2={product.imagem?.replace("/preview.png", "/preview2.png")}
                     onClick={() => setProdutoEmDestaque(product)}
                   />
                 ))}
@@ -618,7 +605,12 @@ export default function Home() {
               {totalPaginas > 1 && (
                 <div className="mt-4 flex items-center justify-center gap-1.5">
                   <button
-                    onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+                    onClick={() => {
+                      setPaginaAtual((p) => Math.max(1, p - 1));
+                      setTimeout(() => {
+                        document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }, 50);
+                    }}
                     disabled={paginaAtual === 1}
                     className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition ${
                       paginaAtual === 1
@@ -631,7 +623,12 @@ export default function Home() {
                   {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
                     <button
                       key={num}
-                      onClick={() => setPaginaAtual(num)}
+                      onClick={() => {
+                        setPaginaAtual(num);
+                        setTimeout(() => {
+                          document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }, 50);
+                      }}
                       className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition ${
                         paginaAtual === num
                           ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-600/30"
@@ -642,7 +639,12 @@ export default function Home() {
                     </button>
                   ))}
                   <button
-                    onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+                    onClick={() => {
+                      setPaginaAtual((p) => Math.min(totalPaginas, p + 1));
+                      setTimeout(() => {
+                        document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }, 50);
+                    }}
                     disabled={paginaAtual === totalPaginas}
                     className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition ${
                       paginaAtual === totalPaginas
