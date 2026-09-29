@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
@@ -89,7 +90,7 @@ export default function Home() {
   // ESTADO PARA MENU DE CATEGORIAS NO HEADER
   const [categoriasMenuAberto, setCategoriasMenuAberto] = useState(false);
 
-  const { addToCart } = useCart();
+  const router = useRouter();
 
   // ROTAÇÃO AUTOMÁTICA DOS BANNERS (5 SEGUNDOS)
   useEffect(() => {

@@ -51,3 +51,12 @@ dist/
 *.rar
 arquivos/interclasses/**/*.rar
 downloads/**/*.rar
+
+# Diretórios temporários e de outras ferramentas
+LIGAR O SERVIDOR/
+relatórios/
+downloads/
+.agents/
+.claude/
+.cursor/
+.devin/

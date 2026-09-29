@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { products } from "@/data/products";
 
 interface Pedido {
   id: number;
@@ -150,8 +151,8 @@ export default function AdminDashboard() {
     }
 
     if (showArtes) {
-      const totalArtes = 0; 
-      html += `
+      const totalArtes = products.length;
+      html += `\
         <div class="relatorio">
           <h2>Artes no Catálogo</h2>
           <div class="total-artes">${totalArtes}</div>
