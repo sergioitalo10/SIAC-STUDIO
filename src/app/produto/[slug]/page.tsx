@@ -46,13 +46,23 @@ export default async function ProductPage({ params }: ProductPageProps) {
     brand: { "@type": "Brand", name: "SIAC STUDIO" }, category: category || "Artes para sublimação", sku: String(product.id),
     offers: { "@type": "Offer", url: `${seoBaseUrl}/produto/${productSlug}`, priceCurrency: "BRL", price: product.preco.toFixed(2), availability: "https://schema.org/InStock", itemCondition: "https://schema.org/NewCondition" },
   };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org", "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Início", item: seoBaseUrl },
+      { "@type": "ListItem", position: 2, name: "Artes para Interclasse", item: `${seoBaseUrl}/artes-interclasse` },
+      ...(product.mascote ? [{ "@type": "ListItem", position: 3, name: product.mascote, item: `${seoBaseUrl}/mascotes-interclasse/${encodeURIComponent(product.mascote.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))}` }] : []),
+      { "@type": "ListItem", position: product.mascote ? 4 : 3, name: product.nome, item: `${seoBaseUrl}/produto/${productSlug}` },
+    ],
+  };
 
   return (
     <main className="min-h-screen bg-black text-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <header className="border-b border-gray-800 bg-black"><div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5"><Link href="/" className="text-2xl font-bold">SIAC <span className="text-blue-500">STUDIO</span></Link><CartButton /></div></header>
       <section className="mx-auto max-w-7xl px-6 py-10">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500"><Link href="/" className="hover:text-white">Início</Link><span className="mx-2">›</span><Link href="/artes-interclasse" className="hover:text-white">Artes para Interclasse</Link>{product.mascote && <><span className="mx-2">›</span><span>{product.mascote}</span></>}<span className="mx-2">›</span><span className="text-gray-300">{product.nome}</span></nav>
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500"><Link href="/" className="hover:text-white">Início</Link><span className="mx-2">›</span><Link href="/artes-interclasse" className="hover:text-white">Artes para Interclasse</Link>{product.mascote && <><span className="mx-2">›</span><Link href={`/mascotes-interclasse/${encodeURIComponent(product.mascote.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))}`} className="hover:text-white">{product.mascote}</Link></>}<span className="mx-2">›</span><span className="text-gray-300">{product.nome}</span></nav>
         <div className="grid gap-12 lg:grid-cols-2">
           <div><div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950"><img src={product.imagem} alt={`Arte ${product.nome} para camisa e sublimação`} className="aspect-square w-full object-cover" /></div><p className="mt-4 text-center text-sm text-gray-500">Preview da arte digital para sublimação.</p></div>
           <div className="flex flex-col justify-center">
