@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { products } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
-import { getProductSlug } from "@/lib/product-seo";
 
 type SeoCategoryPageProps = {
   title: string;
@@ -41,11 +40,14 @@ export default function SeoCategoryPage({ title, description, intro, productsFil
 
         {filteredProducts.length === 0 && <p className="mt-10 text-gray-400">Nenhuma arte encontrada no momento.</p>}
 
-        <div className="mt-14 flex flex-wrap gap-3 border-t border-gray-800 pt-8 text-sm">
-          <Link href="/artes-interclasse" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Artes para Interclasse</Link>
-          <Link href="/artes-para-sublimacao" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Artes para Sublimação</Link>
-          <Link href="/artes-para-camisa" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Artes para Camisa</Link>
-          <Link href="/mascotes-interclasse" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Mascotes para Interclasse</Link>
+        <div className="mt-14 border-t border-gray-800 pt-8">
+          <h2 className="text-xl font-bold">Continue navegando</h2>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <Link href="/artes-interclasse" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Artes para Interclasse</Link>
+            <Link href="/artes-para-sublimacao" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Artes para Sublimação</Link>
+            <Link href="/artes-para-camisa" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Artes para Camisa</Link>
+            <Link href="/mascotes-interclasse" className="rounded-lg border border-gray-800 px-4 py-2 hover:border-blue-500">Mascotes para Interclasse</Link>
+          </div>
         </div>
       </section>
     </main>
