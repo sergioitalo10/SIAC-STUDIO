@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { products } from "@/data/products";
-import { getProductSlug, seoBaseUrl } from "@/lib/product-seo";
+import { getInterclassesMascotes, getMascoteSlug, getProductSlug, seoBaseUrl } from "@/lib/product-seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -12,6 +12,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${seoBaseUrl}/mascotes-interclasse`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
   ];
 
+  const mascotPages: MetadataRoute.Sitemap = getInterclassesMascotes().map((mascote) => ({
+    url: `${seoBaseUrl}/mascotes-interclasse/${getMascoteSlug(mascote)}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.85,
+  }));
+
   const productPages: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${seoBaseUrl}/produto/${getProductSlug(product)}`,
     lastModified: now,
@@ -19,5 +26,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...landingPages, ...productPages];
+  return [...landingPages, ...mascotPages, ...productPages];
 }
