@@ -291,12 +291,12 @@ export default function Home() {
       <header className="sticky top-0 z-40 min-h-[96px] border-b border-gray-800 bg-black/90 backdrop-blur-md flex items-center">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6">
 
-          <Link href="/" className="flex items-center gap-3 transition hover:opacity-90" suppressHydrationWarning>
+          <a href="/" className="flex items-center gap-3 transition hover:opacity-90">
             <img src="/logo.png" alt="SIAC Studio" className="h-14 w-auto object-contain" />
             <span className="text-2xl font-bold tracking-tight">
               SIAC <span className="text-blue-500">STUDIO</span>
             </span>
-          </Link>
+          </a>
 
           {/* MENU HORIZONTAL COMPLETO (estilo marcusdesigner) */}
           <nav className="hidden md:flex items-center gap-3 text-xs font-semibold tracking-wide">
