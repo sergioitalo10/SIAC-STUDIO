@@ -2,6 +2,7 @@ import Link from "next/link";
 import { products } from "@/data/products";
 import AddToCartButton from "@/components/AddToCartButton";
 import CartButton from "@/components/CartButton";
+import SiteHeader from "@/components/SiteHeader";
 import type { Metadata } from "next";
 
 type ProductPageProps = {
@@ -82,20 +83,9 @@ export default async function ProductPage({
     <main className="min-h-screen bg-black text-white">
 
       {/* CABEÇALHO */}
-      <header className="border-b border-gray-800 bg-black">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-
-          <Link
-            href="/"
-            className="text-2xl font-bold"
-          >
-            SIAC <span className="text-blue-500">STUDIO</span>
-          </Link>
-
-          <CartButton />
-
-        </div>
-      </header>
+      <SiteHeader>
+        <CartButton />
+      </SiteHeader>
 
       {/* PRODUTO */}
       <section className="mx-auto max-w-7xl px-6 py-10">
