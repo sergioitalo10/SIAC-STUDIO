@@ -68,7 +68,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((currentCart) =>
       currentCart.filter(
         (product) =>
-          ('artwork_id' in product ? product.artwork_id : product.id) === productId
+          ('artwork_id' in product ? product.artwork_id : product.id) !== productId
       )
     );
   }
