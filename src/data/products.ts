@@ -70,8 +70,8 @@ export const products: Product[] = [
     categoria: "Interclasses",
     mascote: "Dragão",
     preco: 20.0,
-    imagem: "/interclasses/dragao/004 - dragão-verde-limão/preview.png",
-    downloadUrl: "/api/download/interclasses/dragao/004 - dragão-verde-limão/arquivo.rar",
+    imagem: "/interclasses/dragao/004-dragao-verde-limao/preview.png",
+    downloadUrl: "/api/download/interclasses/dragao/004-dragao-verde-limao/arquivo.rar",
     tags: ["dragao", "verde", "limao", "interclasses"],
   },
   // 37 - Javali
