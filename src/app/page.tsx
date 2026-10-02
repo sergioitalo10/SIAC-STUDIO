@@ -828,18 +828,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* NAVEGAÇÃO SEO */}
-      <section className="border-t border-gray-900 bg-gray-950/50">
-        <div className="mx-auto max-w-7xl px-6 py-10">
-          <div className="flex flex-wrap justify-center gap-3 text-sm">
-            <Link href="/artes-interclasse" className="rounded-lg border border-gray-800 px-4 py-2 text-gray-300 transition hover:border-blue-500 hover:text-blue-400">Artes para Interclasse</Link>
-            <Link href="/artes-para-sublimacao" className="rounded-lg border border-gray-800 px-4 py-2 text-gray-300 transition hover:border-blue-500 hover:text-blue-400">Artes para Sublimação</Link>
-            <Link href="/artes-para-camisa" className="rounded-lg border border-gray-800 px-4 py-2 text-gray-300 transition hover:border-blue-500 hover:text-blue-400">Artes para Camisa</Link>
-            <Link href="/mascotes-interclasse" className="rounded-lg border border-gray-800 px-4 py-2 text-gray-300 transition hover:border-blue-500 hover:text-blue-400">Mascotes para Interclasse</Link>
-          </div>
-        </div>
-      </section>
-
       {/* RODAPÉ */}
       <section id="destaques" className="border-t border-gray-900 bg-gray-950/50">
         <div className="mx-auto max-w-7xl px-6 py-8 text-center">

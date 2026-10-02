@@ -1,13 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /admin/
-Disallow: /minha-conta/
-Disallow: /checkout/
-Disallow: /carrinho/
-Disallow: /pagamento/
-Disallow: /area-designer/login/
-Disallow: /area-designer/cadastro/
-Disallow: /area-designer/upload/
 
 Sitemap: https://siac-studio.vercel.app/sitemap.xml
