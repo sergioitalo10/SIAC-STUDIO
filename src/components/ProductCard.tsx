@@ -50,7 +50,7 @@ export default function ProductCard({ id, nome, categoria, preco, imagem, previe
               {formatosArray.map((item, index) => <span key={index} className="text-[9px] font-medium text-gray-300">{item}</span>)}
             </div>
             <span className="absolute top-3 right-3 p-1 rounded-full bg-black/60 text-gray-400" aria-hidden="true">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682c1.76-1.76 1.76-4.61 0-6.364-1.76-4.61 0-6.364 1.76-6.364 4.61-6.364 6.364 0z" /></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682c1.76-1.76 4.61-4.61 6.364-6.364 1.76-1.76 4.61-6.364 6.364-6.364 0z" /></svg>
             </span>
           </div>
           <h3 className="text-[11px] font-bold text-white group-hover:text-blue-400 transition text-center line-clamp-2 mt-1 leading-tight">{nomeExibicao}</h3>
