@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import CartButton from "@/components/CartButton";
+import SiteHeader from "@/components/SiteHeader";
 
 interface ItemPedido {
   id: number;
@@ -274,40 +275,34 @@ const handleEnviarMensagemCliente = async (pedidoId: number) => {
   return (
     <main className="min-h-screen bg-black text-white flex flex-col justify-between">
       {/* CABEÇALHO */}
-      <header className="border-b border-gray-800 bg-black sticky top-0 z-50 backdrop-blur-md bg-black/90">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <Link href="/" className="text-2xl font-bold">
-            SIAC <span className="text-blue-500">STUDIO</span>
+      <SiteHeader>
+        <nav className="hidden gap-8 md:flex">
+          <Link href="/" className="hover:text-blue-500 transition">
+            Loja
           </Link>
+          <Link href="/#categorias" className="hover:text-blue-500 transition">
+            Categorias
+          </Link>
+          <Link href="/#produtos" className="hover:text-blue-500 transition">
+            Produtos
+          </Link>
+          <Link href="/#destaques" className="hover:text-blue-500 transition">
+            Promoções
+          </Link>
+        </nav>
 
-          <nav className="hidden gap-8 md:flex">
-            <Link href="/" className="hover:text-blue-500 transition">
-              Loja
-            </Link>
-            <Link href="/#categorias" className="hover:text-blue-500 transition">
-              Categorias
-            </Link>
-            <Link href="/#produtos" className="hover:text-blue-500 transition">
-              Produtos
-            </Link>
-            <Link href="/#destaques" className="hover:text-blue-500 transition">
-              Promoções
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            {usuario && (
-              <button
-                onClick={handleLogout}
-                className="text-sm font-semibold text-gray-400 hover:text-white transition px-2 py-1 cursor-pointer"
-              >
-                Sair
-              </button>
-            )}
-            <CartButton />
-          </div>
+        <div className="flex items-center gap-4">
+          {usuario && (
+            <button
+              onClick={handleLogout}
+              className="text-sm font-semibold text-gray-400 hover:text-white transition px-2 py-1 cursor-pointer"
+            >
+              Sair
+            </button>
+          )}
+          <CartButton />
         </div>
-      </header>
+      </SiteHeader>
 
       {/* BANNER PRINCIPAL DO PAINEL */}
       <section className="relative overflow-hidden bg-gray-950 border-b border-gray-900">
