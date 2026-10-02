@@ -91,6 +91,7 @@ export default function Home() {
   const [categoriasMenuAberto, setCategoriasMenuAberto] = useState(false);
 
   const router = useRouter();
+  const { addToCart } = useCart();
 
   // ROTAÇÃO AUTOMÁTICA DOS BANNERS (5 SEGUNDOS)
   useEffect(() => {
