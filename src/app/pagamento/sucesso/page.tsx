@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import SiteHeader from "@/components/SiteHeader";
 
 type Produto = {
   id: number;
@@ -106,6 +107,7 @@ export default function PagamentoSucessoPage() {
 
   return (
     <main className="min-h-screen bg-black px-6 py-16 text-white">
+      <SiteHeader />
       <div className="mx-auto max-w-3xl text-center">
 
         <div

@@ -7,6 +7,7 @@ import type { Order } from "@/types/order";
 import type { DesignerProduct } from "@/types/designer";
 import type { Product } from "@/data/products";
 import { createOrder } from "@/lib/orders";
+import SiteHeader from "@/components/SiteHeader";
 
 export default function CheckoutPage() {
   const { cart } = useCart();
@@ -165,16 +166,7 @@ export default function CheckoutPage() {
     return (
       <main className="min-h-screen bg-black text-white">
 
-        <header className="border-b border-gray-800">
-          <div className="mx-auto max-w-7xl px-6 py-5">
-            <Link
-              href="/"
-              className="text-2xl font-bold"
-            >
-              SIAC <span className="text-blue-500">STUDIO</span>
-            </Link>
-          </div>
-        </header>
+        <SiteHeader />
 
         <section className="mx-auto max-w-3xl px-6 py-20 text-center">
 
@@ -208,16 +200,7 @@ export default function CheckoutPage() {
     return (
       <main className="min-h-screen bg-black text-white">
 
-        <header className="border-b border-gray-800 bg-black">
-          <div className="mx-auto max-w-7xl px-6 py-5">
-            <Link
-              href="/"
-              className="text-2xl font-bold"
-            >
-              SIAC <span className="text-blue-500">STUDIO</span>
-            </Link>
-          </div>
-        </header>
+        <SiteHeader />
 
         <section className="mx-auto max-w-2xl px-6 py-20">
 
@@ -295,25 +278,14 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-black text-white">
 
       {/* CABEÇALHO */}
-      <header className="border-b border-gray-800 bg-black">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-
-          <Link
-            href="/"
-            className="text-2xl font-bold"
-          >
-            SIAC <span className="text-blue-500">STUDIO</span>
-          </Link>
-
-          <Link
-            href="/carrinho"
-            className="text-sm font-semibold text-gray-300 transition hover:text-blue-500"
-          >
-            ÔåÉ Voltar ao carrinho
-          </Link>
-
-        </div>
-      </header>
+      <SiteHeader>
+        <Link
+          href="/carrinho"
+          className="text-sm font-semibold text-gray-300 transition hover:text-blue-500"
+        >
+          ÔåÉ Voltar ao carrinho
+        </Link>
+      </SiteHeader>
 
       {/* CHECKOUT */}
       <section className="mx-auto max-w-6xl px-6 py-12 md:py-16">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import SiteHeader from "@/components/SiteHeader";
 
 export default function CartPage() {
   const { cart, removeFromCart, clearCart } = useCart();
@@ -15,25 +16,14 @@ export default function CartPage() {
     <main className="min-h-screen bg-black text-white">
 
       {/* CABEÇALHO */}
-      <header className="border-b border-gray-800 bg-black">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-
-          <Link
-            href="/"
-            className="text-2xl font-bold"
-          >
-            SIAC <span className="text-blue-500">STUDIO</span>
-          </Link>
-
-          <Link
-            href="/"
-            className="text-sm font-semibold text-gray-300 transition hover:text-blue-500"
-          >
-            ← Voltar para a loja
-          </Link>
-
-        </div>
-      </header>
+      <SiteHeader>
+        <Link
+          href="/"
+          className="text-sm font-semibold text-gray-300 transition hover:text-blue-500"
+        >
+          ← Voltar para a loja
+        </Link>
+      </SiteHeader>
 
       {/* CONTEÚDO */}
       <section className="mx-auto max-w-6xl px-6 py-12 md:py-16">

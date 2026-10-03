@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
 
 export default function PagamentoFalhaPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-16 text-white">
+      <SiteHeader />
       <div className="mx-auto max-w-2xl text-center">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-500/20 text-4xl">
           ×
