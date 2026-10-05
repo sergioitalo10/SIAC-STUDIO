@@ -150,8 +150,8 @@ export default function Home() {
       { label: "Campeonato Paulista", color: "bg-green-600" },
       { label: "Copa do Brasil", color: "bg-yellow-500" },
     ],
-    "TreceirÃ£o": [
-      { label: "TreceirÃ£o 2025", color: "bg-green-600" },
+    "TerceirÃ£o": [
+      { label: "TerceirÃ£o 2025", color: "bg-green-600" },
       { label: "Modalidade Zero", color: "bg-green-500" },
     ],
     "LanÃ§amentos": [
@@ -164,6 +164,8 @@ export default function Home() {
       { label: "Interclasse", color: "bg-red-400" },
     ],
     "Interclasses": [
+      { label: "Pokémon Charizard", color: "bg-indigo-600" },
+      { label: "Pokémon Melmetal", color: "bg-indigo-500" },
       { label: "Arara Azul", color: "bg-indigo-600" },
       { label: "Arara Vermelha", color: "bg-indigo-500" },
       { label: "Cavaleiro", color: "bg-indigo-400" },
