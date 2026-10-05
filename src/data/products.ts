@@ -470,17 +470,17 @@ export const products: Product[] = [
     downloadUrl: "/api/download/interclasses/arara/001-arara-azul/arquivo.rar",
     tags: ["arara", "azul", "interclasses", "escolar"],
   },
-  // 1 - pokemon  
+      // 1 - pokemon
   {
     id: "interclasses-pokemon-2027",
-    name: "Pokémon",
-    categories: ["Todas", "Interclasses"],
-    mascote: "pokemon",
-    image: "/interclasses/pokemon/preview.png",
-    // Se o seu sistema aceitar uma segunda imagem, você pode manter a linha abaixo:
-    image2: "/interclasses/pokemon/preview2.png", 
-    // Link ou nome do arquivo que fica na pasta de downloads/arquivos:
-    downloadUrl: "/arquivos/interclasses/pokemon/pokemon.rar" 
+    nome: "Pokémon",
+    categoria: "Interclasses",
+    mascote: "Pokemon",
+    preco: 20.0,
+    imagem: "/interclasses/pokemon/preview.png",
+    downloadUrl: "/api/download/interclasses/pokemon/pokemon.rar",
+    tags: ["pokemon", "interclasses", "escolar"]
   },
+
 
 ];
