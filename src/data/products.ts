@@ -470,17 +470,29 @@ export const products: Product[] = [
     downloadUrl: "/api/download/interclasses/arara/001-arara-azul/arquivo.rar",
     tags: ["arara", "azul", "interclasses", "escolar"],
   },
-      // 1 - pokemon
+  // 1 - pokemon
   {
-    id: "interclasses-pokemon-2027",
-    nome: "Pokémon",
+    id: 43,
+    nome: "Pokémon Melmetal",
     categoria: "Interclasses",
     mascote: "Pokemon",
     preco: 20.0,
-    imagem: "/interclasses/pokemon/preview.png",
-    downloadUrl: "/api/download/interclasses/pokemon/pokemon.rar",
-    tags: ["pokemon", "interclasses", "escolar"]
+    imagem: "/interclasses/pokemon/001-pokemon-melmetal/preview.png",
+    downloadUrl: "/api/download/interclasses/pokemon/001-pokemon-melmetal/arquivo.rar",
+    tags: ["pokemon", "melmetal", "interclasses", "escolar"]
   },
+  {
+    id: 44,
+    nome: "Pokémon Charizard",
+    categoria: "Interclasses",
+    mascote: "Pokemon",
+    preco: 20.0,
+    imagem: "/interclasses/pokemon/002-pokemon-charizard/preview.png",
+    downloadUrl: "/api/download/interclasses/pokemon/002-pokemon-charizard/arquivo.rar",
+    tags: ["pokemon", "charizard", "interclasses", "escolar"]
+  },
+];
+
 
 
 ];
