@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
@@ -72,15 +72,12 @@ export default function Sidebar({
   const categorias = [
     "Todas",
     "Interclasses",
+    "Abadá 2027",
     "Estudantil",
     "Futebol",
     "Treceirão",
-    "Volei",
-    "Basquete",
     "Os Crias",
-    "Ciclismo",
     "Lançamentos",
-    "Promoções",
   ];
 
   const isInterclasses = categoriaSelecionada === "Interclasses" && !mascoteSelecionado;
@@ -113,7 +110,7 @@ export default function Sidebar({
                   }`}
                 >
                   <span className="flex-1 truncate">{cat}</span>
-                  <span className="text-[8px] text-gray-600">{submenuAbierto === cat ? "▲" : "▼"}</span>
+                  <span className="text-[8px] text-gray-600">{submenuAbierto === cat ? "â–²" : "â–¼"}</span>
                 </button>
 
                 {submenuAbierto === cat && (
@@ -155,7 +152,7 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* RODAPÉ */}
+      {/* RODAPÃ‰ */}
       <div className="mt-auto mx-2 pt-3 border-t border-gray-950/90">
         <button
           onClick={() => {
@@ -164,10 +161,12 @@ export default function Sidebar({
           }}
           className="flex items-center gap-1.5 rounded-lg border border-gray-900 bg-gray-950 px-2 py-1.5 text-[10px] text-gray-500 hover:border-blue-500 hover:text-blue-400 w-full transition"
         >
-          <span className="text-[10px]">🔍</span>
+          <span className="text-[10px]">ðŸ”</span>
           Buscar
         </button>
       </div>
     </aside>
   );
 }
+
+
