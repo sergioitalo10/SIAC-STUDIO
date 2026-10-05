@@ -62,7 +62,7 @@ export default function Home() {
   "Abadá 2027",
   "Estudantil",
   "Futebol",
-  "Treceirão",
+  "Terceirão",
   "Os Crias",
   "Lançamentos",
 ];
