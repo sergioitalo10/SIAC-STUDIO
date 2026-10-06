@@ -1,4 +1,4 @@
-export interface Product {
+﻿export interface Product {
   id: number;
   nome: string;
   categoria: string | string[];
@@ -491,8 +491,103 @@ export const products: Product[] = [
     downloadUrl: "/api/download/interclasses/pokemon/002-pokemon-charizard/arquivo.rar",
     tags: ["pokemon", "charizard", "interclasses", "escolar"]
   },
+  // 45 - Abadá Laranja e Amarelo
+  {
+    id: 45,
+    nome: "Abadá Laranja e Amarelo",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/001-arte abada-carnaval-laranja-amarelo1/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/001-arte abada-carnaval-laranja-amarelo1/arquivo.rar",
+    tags: ["abada 2027", "abada", "laranja", "amarelo", "arte para abada", "sublimacao total"],
+  },
+
+  // 46 - Abadá Roxo e Amarelo
+  {
+    id: 46,
+    nome: "Abadá Roxo e Amarelo",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/002-arte abada-carnaval-roxo-amarelo1/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/002-arte abada-carnaval-roxo-amarelo1/arquivo.rar",
+    tags: ["abada 2027", "abada", "roxo", "amarelo", "arte para abada", "sublimacao total"],
+  },
+
+  // 47 - Abadá Azul
+  {
+    id: 47,
+    nome: "Abadá Azul",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/003-arte-abada-carnaval-azul1/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/003-arte-abada-carnaval-azul1/arte%20abada-carnaval-azul1.rar",
+    tags: ["abada 2027", "abada", "azul", "arte para abada", "sublimacao total"],
+  },
+
+  // 48 - Abadá Pink, Amarelo e Preto
+  {
+    id: 48,
+    nome: "Abadá Pink, Amarelo e Preto",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/004-arte-carnaval-pink-amarelo-preto1/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/004-arte-carnaval-pink-amarelo-preto1/arquivo.rar",
+    tags: ["abada 2027", "abada", "pink", "amarelo", "preto", "arte para abada", "sublimacao total"],
+  },
+
+  // 49 - Abadá Verde Limão
+  {
+    id: 49,
+    nome: "Abadá Verde Limão",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/005-arte-abada-verde-limao1/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/005-arte-abada-verde-limao1/arquivo.rar",
+    tags: ["abada 2027", "abada", "verde limao", "verde", "arte para abada", "sublimacao total"],
+  },
+
+  // 50 - Abadá Azul 2
+  {
+    id: 50,
+    nome: "Abadá Azul 2",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/006-arte-abada-carnaval-azul2/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/006-arte-abada-carnaval-azul2/arquivo.rar",
+    tags: ["abada 2027", "abada", "azul", "arte para abada", "sublimacao total"],
+  },
+
+  // 51 - Abadá Celeste e Branco
+  {
+    id: 51,
+    nome: "Abadá Celeste e Branco",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/007-arte-abada-celeste-branco/arte-abada-celeste-branco.png",
+    downloadUrl: "/api/download/abada-carnaval/007-arte-abada-celeste-branco/arquivo.rar",
+    tags: ["abada 2027", "abada", "celeste", "azul claro", "branco", "arte para abada", "sublimacao total"],
+  },
+
+  // 52 - Abadá Amarelo Colorido
+  {
+    id: 52,
+    nome: "Abadá Amarelo Colorido",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/008-arte-abada-carnaval-amarelo-cores/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/008-arte-abada-carnaval-amarelo-cores/arquivo.rar",
+    tags: ["abada 2027", "abada", "amarelo", "colorido", "arte para abada", "sublimacao total"],
+  },
+
+  // 53 - Abadá Pink Colorido
+  {
+    id: 53,
+    nome: "Abadá Pink Colorido",
+    categoria: "Abadá 2027",
+    preco: 20.0,
+    imagem: "/abada-carnaval/009-arte-abada-carnaval-pink-cores1/preview.png",
+    downloadUrl: "/api/download/abada-carnaval/009-arte-abada-carnaval-pink-cores1/arquivo.rar",
+    tags: ["abada 2027", "abada", "pink", "colorido", "arte para abada", "sublimacao total"],
+  },
 ];
 
-
-
-];
