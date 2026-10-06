@@ -563,7 +563,7 @@ export const products: Product[] = [
     nome: "Abadá Celeste e Branco",
     categoria: "Abadá 2027",
     preco: 20.0,
-    imagem: "/abada-carnaval/007-arte-abada-celeste-branco/arte-abada-celeste-branco.png",
+    imagem: "/abada-carnaval/007-arte-abada-celeste-branco/preview.png",
     downloadUrl: "/api/download/abada-carnaval/007-arte-abada-celeste-branco/arquivo.rar",
     tags: ["abada 2027", "abada", "celeste", "azul claro", "branco", "arte para abada", "sublimacao total"],
   },
