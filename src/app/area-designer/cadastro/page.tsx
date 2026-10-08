@@ -54,7 +54,7 @@ export default function CadastroPage() {
       <div style={styles.card}>
         <h1 style={styles.title}>Cadastro de Designer</h1>
         <p style={styles.subtitle}>
-          Crie sua conta para enviar suas artes e receber 40% de cada venda.
+          Envie sua arte e receba comissões ilimitadas por elas.
         </p>
 
         {error && <div style={styles.errorBox}>{error}</div>}
