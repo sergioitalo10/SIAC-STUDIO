@@ -1,0 +1,45 @@
+-- SIAC STUDIO - configuração de designers e segurança administrativa
+
+CREATE TABLE IF NOT EXISTS admin_users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  id SERIAL PRIMARY KEY,
+  admin_id INT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  token_hash VARCHAR(128) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE designers
+  ADD COLUMN IF NOT EXISTS especialidade VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS pix_tipo VARCHAR(30),
+  ADD COLUMN IF NOT EXISTS comissao_percentual NUMERIC(5,2) DEFAULT 40.00,
+  ADD COLUMN IF NOT EXISTS valor_padrao_arte NUMERIC(10,2) DEFAULT 20.00,
+  ADD COLUMN IF NOT EXISTS pix_atualizado_em TIMESTAMP;
+
+ALTER TABLE designer_artworks
+  ADD COLUMN IF NOT EXISTS valor_personalizado NUMERIC(10,2),
+  ADD COLUMN IF NOT EXISTS exclusiva BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP;
+
+CREATE TABLE IF NOT EXISTS designer_password_resets (
+  id SERIAL PRIMARY KEY,
+  designer_id INT NOT NULL REFERENCES designers(id) ON DELETE CASCADE,
+  token_hash VARCHAR(128) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  usado_em TIMESTAMP,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS designer_pix_history (
+  id SERIAL PRIMARY KEY,
+  designer_id INT NOT NULL REFERENCES designers(id) ON DELETE CASCADE,
+  pix_tipo VARCHAR(30),
+  pix VARCHAR(255),
+  alterado_por VARCHAR(30) NOT NULL DEFAULT 'designer',
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+export async function POST(request:Request){try{const {token,senha}=await request.json();if(!token||typeof senha!=="string"||senha.length<8)return NextResponse.json({error:"Token e senha de pelo menos 8 caracteres são obrigatórios"},{status:400});const hash=crypto.createHash("sha256").update(token).digest("hex");const sql=neon(process.env.DATABASE_URL!);const rows:any[]=await sql`SELECT id,designer_id FROM designer_password_resets WHERE token_hash=${hash} AND usado_em IS NULL AND expires_at>CURRENT_TIMESTAMP LIMIT 1`;if(!rows.length)return NextResponse.json({error:"Link inválido ou expirado"},{status:400});const senhaHash=await bcrypt.hash(senha,12);await sql`UPDATE designers SET senha=${senhaHash} WHERE id=${rows[0].designer_id}`;await sql`UPDATE designer_password_resets SET usado_em=CURRENT_TIMESTAMP WHERE id=${rows[0].id}`;return NextResponse.json({ok:true});}catch(error){console.error(error);return NextResponse.json({error:"Não foi possível redefinir a senha"},{status:500});}}
