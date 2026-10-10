@@ -790,7 +790,7 @@ export default function Home() {
           </div>
         ) : designerProducts.length === 0 ? (
           <div className="rounded-2xl border border-gray-800 bg-gray-950 p-10 text-center">
-            <div className="text-5xl mb-4">ðŸŽ¨</div>
+            <div className="text-5xl mb-4">🎨</div>
             <h3 className="text-xl font-bold text-white">Ainda não há artes publicadas</h3>
             <p className="mt-2 text-sm text-gray-400 max-w-md mx-auto">
               Enquanto não houver designers cadastrados enviando e aprovando artes,
