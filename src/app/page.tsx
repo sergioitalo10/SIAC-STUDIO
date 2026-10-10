@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useEffect, useRef } from "react";
@@ -24,21 +24,21 @@ const BANNERS = [
   },
   {
     id: 2,
-    tag: "DOWNLOAD IMEDIATO â€¢ CDR & PNG",
+    tag: "DOWNLOAD IMEDIATO • CDR & PNG",
     titulo: "Artes 100% Vetorizadas",
-    descricao: "Arquivos organizados por camadas para facilitar a sua produÃ§Ã£o no CorelDRAW.",
-    botaoTexto: "Explorar CatÃ¡logo",
+    descricao: "Arquivos organizados por camadas para facilitar a sua produção no CorelDRAW.",
+    botaoTexto: "Explorar Catálogo",
     categoriaAlvo: "Todas",
     corDestaque: "from-purple-600/30 to-blue-900/40",
     imagemFundo: "",
   },
   {
     id: 3,
-    tag: "LANÃ‡AMENTOS EXCLUSIVOS",
+    tag: "LANÇAMENTOS EXCLUSIVOS",
     titulo: "Kits de Mascotes Premium",
-    descricao: "Pantera, Coringa, Venom, Kraken, LeÃ£o e Tigre atualizados para sublimaÃ§Ã£o.",
-    botaoTexto: "Ver LanÃ§amentos",
-    categoriaAlvo: "LanÃ§amentos",
+    descricao: "Pantera, Coringa, Venom, Kraken, Leão e Tigre atualizados para sublimação.",
+    botaoTexto: "Ver Lançamentos",
+    categoriaAlvo: "Lançamentos",
     corDestaque: "from-cyan-600/30 to-blue-900/40",
     imagemFundo: "",
   },
@@ -102,7 +102,7 @@ export default function Home() {
   const router = useRouter();
   const { addToCart } = useCart();
 
-  // ROTAÃ‡ÃƒO AUTOMÃTICA DOS BANNERS (5 SEGUNDOS)
+  // ROTAÇÃO AUTOMÁTICA DOS BANNERS (5 SEGUNDOS)
   useEffect(() => {
     if (pausarRotacao) return;
 
@@ -113,19 +113,19 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [pausarRotacao]);
 
-  // Carrega a sessÃ£o do usuÃ¡rio
+  // Carrega a sessão do usuário
   useEffect(() => {
     const sessaoSalva = localStorage.getItem("cliente_sessao");
     if (sessaoSalva) {
       try {
         setUsuario(JSON.parse(sessaoSalva));
       } catch (e) {
-        console.error("Erro ao carregar sessÃ£o:", e);
+        console.error("Erro ao carregar sessão:", e);
       }
     }
   }, []);
 
-  // Lista completa de categorias para os botÃµes (independente dos produtos)
+  // Lista completa de categorias para os botões (independente dos produtos)
   const todasCategorias = useMemo(() => {
     return [
       "Todas",
@@ -133,7 +133,7 @@ export default function Home() {
       "Abadá 2027",
       "Estudantil",
       "Futebol",
-      "Treceirão",
+      "Terceirão",
       "Os Crias",
       "Lançamentos",
     ];
@@ -145,16 +145,16 @@ export default function Home() {
   // DADOS PARA SUBMENUS DE CADA CATEGORIA DA LISTA HORIZONTAL
   const subcategoriasMap: Record<string, { label: string; color: string }[]> = {
     "Futebol": [
-      { label: "BrasileirÃ£o SÃ©rie A", color: "bg-blue-600" },
-      { label: "BrasileirÃ£o SÃ©rie B", color: "bg-blue-500" },
+      { label: "Brasileirão Série A", color: "bg-blue-600" },
+      { label: "Brasileirão Série B", color: "bg-blue-500" },
       { label: "Campeonato Paulista", color: "bg-green-600" },
       { label: "Copa do Brasil", color: "bg-yellow-500" },
     ],
-    "TerceirÃ£o": [
-      { label: "TerceirÃ£o 2025", color: "bg-green-600" },
+    "Terceirão": [
+      { label: "Terceirão 2025", color: "bg-green-600" },
       { label: "Modalidade Zero", color: "bg-green-500" },
     ],
-    "LanÃ§amentos": [
+    "Lançamentos": [
       { label: "Mascotes Premium", color: "bg-gray-700" },
       { label: "Kits Especiais", color: "bg-gray-600" },
     ],
@@ -209,7 +209,7 @@ export default function Home() {
     });
   }, [busca, categoriaSelecionada, mascoteSelecionado]);
 
-  // CÃ¡lculo de paginaÃ§Ã£o
+  // Cálculo de paginação
   const ITENS_POR_PAGINA = 21;
   const totalPaginas = Math.ceil(produtosFiltrados.length / ITENS_POR_PAGINA);
   const produtosParaPagina = useMemo(() => {
@@ -277,7 +277,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen bg-black text-white" suppressHydrationWarning>
 
-      {/* CABEÃ‡ALHO EXPANDIDO */}
+      {/* CABEÇALHO EXPANDIDO */}
       <header className="sticky top-0 z-40 min-h-[96px] border-b border-gray-800 bg-black/90 backdrop-blur-md flex items-center">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6">
 
@@ -306,7 +306,7 @@ export default function Home() {
               QUEM SOMOS
             </button>
             <button onClick={() => filtrarPorMenu("GRATIS")} className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-gray-400 hover:border-blue-500 hover:text-white transition whitespace-nowrap">
-              GRÃTIS
+              GRÁTIS
             </button>
           </nav>
 
@@ -317,7 +317,7 @@ export default function Home() {
                 className="flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-950/40 px-4 py-2 text-xs font-semibold text-blue-400 transition hover:border-blue-500 hover:bg-blue-900/50"
               >
                 <span className="h-2.5 w-2.5 rounded-full bg-blue-400 animate-pulse"></span>
-                <span>OlÃ¡, {usuario.nome.split(" ")[0]}</span>
+                <span>Olá, {usuario.nome.split(" ")[0]}</span>
               </Link>
             ) : (
               <div className="flex items-center gap-3">
@@ -411,7 +411,7 @@ export default function Home() {
               ))}
             </div>
 
-            {/* BOTÃƒO ANTERIOR */}
+            {/* BOTÃO ANTERIOR */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -422,7 +422,7 @@ export default function Home() {
               
             </button>
 
-            {/* BOTÃƒO PRÃ“XIMO */}
+            {/* BOTÃO PRÓXIMO */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -478,7 +478,7 @@ export default function Home() {
                       }`}
                     >
                       <span>Interclasses</span>
-                      <span className="text-[8px] text-gray-600">â–¼</span>
+                      <span className="text-[8px] text-gray-600">▼</span>
                     </button>
 
                     {menuAberto && (
@@ -540,18 +540,18 @@ export default function Home() {
               className="w-full rounded-lg border border-gray-800 bg-black px-3.5 py-1.5 pr-8 text-xs text-white outline-none transition placeholder:text-gray-500 focus:border-blue-500"
             />
             <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-              ðŸ”
+              🔍
             </span>
           </div>
         </div>
       </section>
 
-      {/* CATÃLOGO DE PRODUTOS */}
+      {/* CATÁLOGO DE PRODUTOS */}
       <section id="produtos" className="mx-auto max-w-7xl px-6 pt-2 pb-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xl font-bold tracking-tight">
             {mascoteSelecionado
-              ? `Interclasses â€” ${mascoteSelecionado}`
+              ? `Interclasses — ${mascoteSelecionado}`
               : categoriaSelecionada === "Todas"
               ? "Nossas Artes"
               : categoriaSelecionada}
@@ -567,7 +567,7 @@ export default function Home() {
 
         {produtosFiltrados.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-6">
-            {/* SIDEBAR DE CATEGORIAS â€” dentro do grid dos cards */}
+            {/* SIDEBAR DE CATEGORIAS — dentro do grid dos cards */}
             <div className="hidden lg:block">
               <Sidebar
                 categoriaSelecionada={categoriaSelecionada}
@@ -610,7 +610,7 @@ export default function Home() {
                         : "border-gray-800 bg-gray-900 text-gray-300 hover:border-blue-500 hover:text-blue-400"
                     }`}
                   >
-                    â€¹
+                    ‹
                   </button>
                   {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
                     <button
@@ -644,7 +644,7 @@ export default function Home() {
                         : "border-gray-800 bg-gray-900 text-gray-300 hover:border-blue-500 hover:text-blue-400"
                     }`}
                   >
-                    â€º
+                    ›
                   </button>
                 </div>
               )}
@@ -676,7 +676,7 @@ export default function Home() {
               onClick={() => setProdutoEmDestaque(null)}
               className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-gray-300 backdrop-blur-md transition hover:bg-blue-600 hover:text-white"
             >
-              âœ•
+              ×
             </button>
 
             <div 
@@ -698,7 +698,7 @@ export default function Home() {
 
               {!isHovered && (
                 <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-gray-700 bg-black/60 px-3 py-1 text-[11px] font-medium text-gray-300 backdrop-blur-md">
-                  ðŸ” Passe o mouse na arte para dar zoom
+                  🔍 Passe o mouse na arte para dar zoom
                 </div>
               )}
             </div>
@@ -707,7 +707,7 @@ export default function Home() {
               <div>
                 <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-400 border border-blue-500/20">
                   {Array.isArray(produtoEmDestaque.categoria)
-                    ? produtoEmDestaque.categoria.join(" â€¢ ")
+                    ? produtoEmDestaque.categoria.join(" • ")
                     : produtoEmDestaque.categoria}
                 </span>
 
@@ -723,22 +723,22 @@ export default function Home() {
                   {produtoEmDestaque.designerNome && (
                     <>
                       <p className="flex items-center gap-2">
-                        <span className="text-blue-400">âœ</span>
+                        <span className="text-blue-400">✍</span>
                         Artista: <span className="text-white font-normal">{produtoEmDestaque.designerNome}</span>
                       </p>
                       <p className="flex items-center gap-2 text-blue-400">
-                        40% para o designer â€¢ 60% para o SIAC STUDIO
+                        40% para o designer • 60% para o SIAC STUDIO
                       </p>
                     </>
                   )}
                   <p className="flex items-center gap-2">
-                    <span className="text-blue-400">âœ“</span> Arquivo 100% Vetorizado
+                    <span className="text-blue-400">✓</span> Arquivo 100% Vetorizado
                   </p>
                   <p className="flex items-center gap-2">
-                    <span className="text-blue-400">âœ“</span> SublimaÃ§Ã£o Total / CDR & PNG
+                    <span className="text-blue-400">✓</span> Sublimação Total / CDR & PNG
                   </p>
                   <p className="flex items-center gap-2">
-                    <span className="text-blue-400">âœ“</span> LiberaÃ§Ã£o Imediata via `.RAR`
+                    <span className="text-blue-400">✓</span> Liberação Imediata via `.RAR`
                   </p>
                 </div>
               </div>
@@ -748,7 +748,7 @@ export default function Home() {
                   onClick={() => handleComprarAgora(produtoEmDestaque)}
                   className="w-full rounded-xl bg-blue-600 py-3 text-xs font-bold text-white transition hover:bg-blue-500 shadow-lg shadow-blue-600/30"
                 >
-                  Comprar Agora â€” R$ {produtoEmDestaque.preco.toFixed(2).replace(".", ",")}
+                  Comprar Agora — R$ {produtoEmDestaque.preco.toFixed(2).replace(".", ",")}
                 </button>
                 <button
                   onClick={() => setProdutoEmDestaque(null)}
@@ -763,7 +763,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* SEÃ‡ÃƒO: ARTES DOS COLABORADORES */}
+      {/* SEÇÃO: ARTES DOS COLABORADORES */}
       <section className="mx-auto max-w-7xl px-6 pb-8">
         <div className="mb-6 flex items-center justify-between border-t border-gray-800 pt-8">
           <div>
@@ -780,7 +780,7 @@ export default function Home() {
               ? "Carregando..."
               : designerProducts.length === 0
               ? "Nenhuma arte publicada ainda"
-              : `${designerProducts.length} artes disponÃ­veis`}
+              : `${designerProducts.length} artes disponíveis`}
           </span>
         </div>
 
@@ -791,10 +791,10 @@ export default function Home() {
         ) : designerProducts.length === 0 ? (
           <div className="rounded-2xl border border-gray-800 bg-gray-950 p-10 text-center">
             <div className="text-5xl mb-4">ðŸŽ¨</div>
-            <h3 className="text-xl font-bold text-white">Ainda nÃ£o hÃ¡ artes publicadas</h3>
+            <h3 className="text-xl font-bold text-white">Ainda não há artes publicadas</h3>
             <p className="mt-2 text-sm text-gray-400 max-w-md mx-auto">
-              Enquanto nÃ£o houver designers cadastrados enviando e aprovando artes,
-              esta seÃ§Ã£o permanecerÃ¡ vazia. Os primeiros colaboradores estarÃ£o disponÃ­veis em breve.
+              Enquanto não houver designers cadastrados enviando e aprovando artes,
+              esta seção permanecerá vazia. Os primeiros colaboradores estarão disponíveis em breve.
             </p>
           </div>
         ) : (
@@ -819,14 +819,14 @@ export default function Home() {
         )}
       </section>
 
-      {/* RODAPÃ‰ */}
+      {/* RODAPÉ */}
       <section id="destaques" className="border-t border-gray-900 bg-gray-950/50">
         <div className="mx-auto max-w-7xl px-6 py-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500">
             SIAC STUDIO
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Novas artes adicionadas semanalmente â€¢ Arquivos 100% vetorizados e em alta resoluÃ§Ã£o
+            Novas artes adicionadas semanalmente • Arquivos 100% vetorizados e em alta resolução
           </p>
         </div>
       </section>
