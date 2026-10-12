@@ -1,7 +1,162 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { requireAdmin } from "@/lib/admin-session";
-export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
- try{await requireAdmin();const {id}=await params;const sql=neon(process.env.DATABASE_URL!);const d:any[]=await sql`SELECT id,nome,email,especialidade,pix,pix_tipo,comissao_percentual,valor_padrao_arte,criado_em FROM designers WHERE id=${Number(id)}`;if(!d.length)return NextResponse.json({error:"Designer não encontrado"},{status:404});const artworks=await sql`SELECT id,titulo,preco,valor_personalizado,exclusiva,status,imagem_url,thumbnail_url,criado_em FROM designer_artworks WHERE designer_id=${Number(id)} ORDER BY criado_em DESC`;const earnings=await sql`SELECT de.id,de.pedido_id,de.designer_artwork_id,de.valor_venda,de.valor_comissao,de.status,de.criado_em,da.titulo nome_arte FROM designer_earnings de JOIN designer_artworks da ON da.id=de.designer_artwork_id WHERE de.designer_id=${Number(id)} ORDER BY de.criado_em DESC`;return NextResponse.json({designer:d[0],artworks,earnings});}catch{return NextResponse.json({error:"Não autorizado"},{status:401});}}
-export async function PATCH(request:Request,{params}:{params:Promise<{id:string}>}){
- try{await requireAdmin();const {id}=await params;const body=await request.json();const sql=neon(process.env.DATABASE_URL!);const old:any[]=await sql`SELECT pix,pix_tipo FROM designers WHERE id=${Number(id)}`;if(!old.length)return NextResponse.json({error:"Designer não encontrado"},{status:404});const nome=body.nome==null?null:String(body.nome);const especialidade=body.especialidade==null?null:String(body.especialidade);const comissao=Number(body.comissao_percentual);const valorPadrao=Number(body.valor_padrao_arte);const pix=body.pix==null?null:String(body.pix);const pixTipo=body.pix_tipo==null?null:String(body.pix_tipo);if(!Number.isFinite(comissao)||comissao<0||comissao>100)return NextResponse.json({error:"Comissão inválida"},{status:400});if(!Number.isFinite(valorPadrao)||valorPadrao<0)return NextResponse.json({error:"Valor padrão inválido"},{status:400});await sql`UPDATE designers SET nome=COALESCE(${nome},nome), especialidade=${especialidade}, comissao_percentual=${comissao}, valor_padrao_arte=${valorPadrao}, pix=${pix}, pix_tipo=${pixTipo}, pix_atualizado_em=CASE WHEN COALESCE(${pix},'') <> COALESCE(${old[0].pix},'') OR COALESCE(${pixTipo},'') <> COALESCE(${old[0].pix_tipo},'') THEN CURRENT_TIMESTAMP ELSE pix_atualizado_em END WHERE id=${Number(id)}`;if((pix||"")!==(old[0].pix||"")||(pixTipo||"")!==(old[0].pix_tipo||""))await sql`INSERT INTO designer_pix_history(designer_id,pix_tipo,pix,alterado_por) VALUES(${Number(id)},${pixTipo},${pix},'admin')`;return NextResponse.json({ok:true});}catch(error){console.error(error);return NextResponse.json({error:"Não foi possível atualizar o designer"},{status:500});}}
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+function getDatabase() {
+  const dbUrl = process.env.DATABASE_URL;
+
+  if (!dbUrl) {
+    throw new Error("DATABASE_URL não configurada");
+  }
+
+  return neon(dbUrl);
+}
+
+export async function GET(_: Request, { params }: RouteContext) {
+  try {
+    await requireAdmin();
+
+    const { id } = await params;
+    const designerId = Number(id);
+
+    if (!Number.isInteger(designerId) || designerId <= 0) {
+      return NextResponse.json(
+        { error: "ID do designer inválido" },
+        { status: 400 }
+      );
+    }
+
+    const sql = getDatabase();
+
+    const designers = await sql`
+      SELECT
+        id,
+        nome,
+        email,
+        whatsapp,
+        documento,
+        status,
+        percentual_comissao,
+        dados_pagamento,
+        pix,
+        created_at
+      FROM designers
+      WHERE id = ${designerId}
+    `;
+
+    if (!designers.length) {
+      return NextResponse.json(
+        { error: "Designer não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      designer: designers[0],
+      artworks: [],
+      earnings: [],
+    });
+  } catch (error) {
+    console.error("Erro ao consultar designer:", error);
+
+    return NextResponse.json(
+      { error: "Não foi possível consultar o designer." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request, { params }: RouteContext) {
+  try {
+    await requireAdmin();
+
+    const { id } = await params;
+    const designerId = Number(id);
+
+    if (!Number.isInteger(designerId) || designerId <= 0) {
+      return NextResponse.json(
+        { error: "ID do designer inválido" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const sql = getDatabase();
+
+    const nome =
+      body.nome == null ? null : String(body.nome).trim();
+
+    const whatsapp =
+      body.whatsapp == null ? null : String(body.whatsapp).trim();
+
+    const documento =
+      body.documento == null ? null : String(body.documento).trim();
+
+    const dadosPagamento =
+      body.dados_pagamento == null
+        ? null
+        : String(body.dados_pagamento).trim();
+
+    const pix =
+      body.pix == null ? null : String(body.pix).trim();
+
+    const percentual = Number(body.percentual_comissao);
+
+    if (
+      body.percentual_comissao == null ||
+      !Number.isFinite(percentual) ||
+      percentual < 0 ||
+      percentual > 100
+    ) {
+      return NextResponse.json(
+        { error: "A comissão deve estar entre 0 e 100." },
+        { status: 400 }
+      );
+    }
+
+    if (nome !== null && !nome) {
+      return NextResponse.json(
+        { error: "O nome não pode ficar vazio." },
+        { status: 400 }
+      );
+    }
+
+    const existing = await sql`
+      SELECT id
+      FROM designers
+      WHERE id = ${designerId}
+    `;
+
+    if (!existing.length) {
+      return NextResponse.json(
+        { error: "Designer não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    await sql`
+      UPDATE designers
+      SET
+        nome = COALESCE(${nome}, nome),
+        whatsapp = COALESCE(${whatsapp}, whatsapp),
+        documento = COALESCE(${documento}, documento),
+        dados_pagamento = COALESCE(${dadosPagamento}, dados_pagamento),
+        pix = COALESCE(${pix}, pix),
+        percentual_comissao = ${percentual}
+      WHERE id = ${designerId}
+    `;
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Erro ao atualizar designer:", error);
+
+    return NextResponse.json(
+      { error: "Não foi possível atualizar o designer." },
+      { status: 500 }
+    );
+  }
+}

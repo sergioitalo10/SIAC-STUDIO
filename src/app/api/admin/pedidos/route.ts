@@ -1,17 +1,24 @@
+
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
+import { requireAdmin } from "@/lib/admin-session";
 
 export async function GET() {
   try {
+    await requireAdmin();
+
     const dbUrl = process.env.DATABASE_URL;
+
     if (!dbUrl) {
-      return NextResponse.json({ error: "DATABASE_URL não configurada" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Serviço temporariamente indisponível" },
+        { status: 500 }
+      );
     }
 
     const sql = neon(dbUrl);
 
-    // Busca pedidos pagos, ordenados por data
-    const pedidos: any[] = await sql`
+    const pedidos = await sql`
       SELECT id, email, total, status, criado_em
       FROM pedidos
       WHERE status = 'pago'
@@ -20,8 +27,19 @@ export async function GET() {
     `;
 
     return NextResponse.json({ pedidos });
-  } catch (err: any) {
+  } catch (err) {
+    if (err instanceof Error && err.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { error: "Não autorizado" },
+        { status: 401 }
+      );
+    }
+
     console.error("Erro ao buscar pedidos:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Erro interno ao buscar pedidos" },
+      { status: 500 }
+    );
   }
 }

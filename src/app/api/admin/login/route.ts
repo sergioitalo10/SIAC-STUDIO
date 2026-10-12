@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
@@ -6,27 +7,85 @@ import { createAdminSession } from "@/lib/admin-session";
 export async function POST(request: Request) {
   try {
     const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) return NextResponse.json({ error: "DATABASE_URL não configurada" }, { status: 500 });
-    const sql = neon(dbUrl);
-    const { username, password } = await request.json();
-    if (!username || !password) return NextResponse.json({ error: "Usuário e senha são obrigatórios" }, { status: 400 });
-    await sql`CREATE TABLE IF NOT EXISTS admin_users (id SERIAL PRIMARY KEY, username VARCHAR(100) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL)`;
-    const admins: any[] = await sql`SELECT id, username, password_hash FROM admin_users WHERE username = ${username} LIMIT 1`;
-    let admin = admins[0];
-    if (!admin) {
-      const count: any[] = await sql`SELECT COUNT(*)::int AS total FROM admin_users`;
-      if (Number(count[0]?.total) !== 0) return NextResponse.json({ error: "Usuário ou senha incorretos" }, { status: 401 });
-      if (String(password).length < 8) return NextResponse.json({ error: "A senha inicial deve ter pelo menos 8 caracteres" }, { status: 400 });
-      const hash = await bcrypt.hash(password, 12);
-      const created: any[] = await sql`INSERT INTO admin_users (username, password_hash) VALUES (${username}, ${hash}) RETURNING id, username, password_hash`;
-      admin = created[0];
+
+    if (!dbUrl) {
+      return NextResponse.json(
+        { error: "Serviço temporariamente indisponível" },
+        { status: 500 }
+      );
     }
-    if (!(await bcrypt.compare(password, admin.password_hash))) return NextResponse.json({ error: "Usuário ou senha incorretos" }, { status: 401 });
-    await sql`CREATE TABLE IF NOT EXISTS admin_sessions (id SERIAL PRIMARY KEY, admin_id INT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE, token_hash VARCHAR(128) NOT NULL UNIQUE, expires_at TIMESTAMP NOT NULL, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`;
+
+    const body = await request.json().catch(() => null);
+
+    const username =
+      typeof body?.username === "string"
+        ? body.username.trim()
+        : "";
+
+    const password =
+      typeof body?.password === "string"
+        ? body.password
+        : "";
+
+    if (!username || !password) {
+      return NextResponse.json(
+        { error: "Usuário ou senha incorretos" },
+        { status: 401 }
+      );
+    }
+
+    if (username.length > 100 || password.length > 1024) {
+      return NextResponse.json(
+        { error: "Usuário ou senha incorretos" },
+        { status: 401 }
+      );
+    }
+
+    const sql = neon(dbUrl);
+
+    const admins = await sql`
+      SELECT id, username, password_hash
+      FROM admin_users
+      WHERE username = ${username}
+      LIMIT 1
+    `;
+
+    const admin = admins[0] as
+      | {
+          id: number;
+          username: string;
+          password_hash: string;
+        }
+      | undefined;
+
+    if (
+      !admin ||
+      typeof admin.password_hash !== "string" ||
+      !(await bcrypt.compare(password, admin.password_hash))
+    ) {
+      return NextResponse.json(
+        { error: "Usuário ou senha incorretos" },
+        { status: 401 }
+      );
+    }
+
     await createAdminSession(admin.id);
-    return NextResponse.json({ ok: true, username: admin.username });
+
+    return NextResponse.json({
+      ok: true,
+      username: admin.username,
+    });
   } catch (error) {
-    console.error("Erro no login admin:", error);
-    return NextResponse.json({ error: "Erro interno no login" }, { status: 500 });
+    console.error(
+      "Erro no login administrativo:",
+      error instanceof Error
+        ? error.message
+        : "Erro desconhecido"
+    );
+
+    return NextResponse.json(
+      { error: "Erro interno no login" },
+      { status: 500 }
+    );
   }
 }

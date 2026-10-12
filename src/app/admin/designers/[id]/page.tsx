@@ -1,4 +1,329 @@
 "use client";
-import {useEffect,useState} from "react";import {useParams,useRouter} from "next/navigation";
-export default function DesignerConfig(){const {id}=useParams<{id:string}>();const router=useRouter();const [d,setD]=useState<any>(null);const [arts,setArts]=useState<any[]>([]);const [earn,setEarn]=useState<any[]>([]);const [msg,setMsg]=useState("");const [form,setForm]=useState<any>({});useEffect(()=>{fetch(`/api/admin/designers/${id}`).then(async r=>{if(r.status===401){router.push("/admin/login");return}const x=await r.json();setD(x.designer);setForm(x.designer||{});setArts(x.artworks||[]);setEarn(x.earnings||[])})},[id,router]);if(!d)return <main style={{minHeight:"100vh",background:"#000",color:"#fff",padding:30}}>Carregando...</main>;async function salvar(){const r=await fetch(`/api/admin/designers/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});const x=await r.json();setMsg(r.ok?"Dados do designer salvos.":x.error||"Erro")}async function salvarArte(a:any){const r=await fetch(`/api/admin/designers/${id}/artworks`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({artwork_id:a.id,preco:Number(a.preco),valor_personalizado:a.valor_personalizado,exclusiva:a.exclusiva})});setMsg(r.ok?"Valor da arte atualizado.":"Não foi possível atualizar a arte.")}return <main style={{minHeight:"100vh",background:"#000",color:"#fff",padding:24}}><div style={{maxWidth:1100,margin:"0 auto"}}><button onClick={()=>router.push("/admin")} style={{background:"transparent",border:0,color:"#60a5fa",cursor:"pointer"}}>← Painel</button><h1 style={{color:"#60a5fa"}}>Configurar designer</h1><section style={card}><h2>{d.nome}</h2><p style={{color:"#94a3b8"}}>{d.email}</p><div style={grid}><label>Nome<input value={form.nome||""} onChange={e=>setForm({...form,nome:e.target.value})} style={input}/></label><label>Especialidade<input value={form.especialidade||""} onChange={e=>setForm({...form,especialidade:e.target.value})} style={input}/></label><label>Comissão (%)<input type="number" min="0" max="100" step="0.01" value={form.comissao_percentual??40} onChange={e=>setForm({...form,comissao_percentual:e.target.value})} style={input}/></label><label>Valor padrão da arte (R$)<input type="number" min="0" step="0.01" value={form.valor_padrao_arte??20} onChange={e=>setForm({...form,valor_padrao_arte:e.target.value})} style={input}/></label><label>Tipo de PIX<select value={form.pix_tipo||""} onChange={e=>setForm({...form,pix_tipo:e.target.value})} style={input}><option value="">Selecione</option><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">E-mail</option><option value="telefone">Telefone</option><option value="aleatoria">Chave aleatória</option></select></label><label>Chave PIX<input value={form.pix||""} onChange={e=>setForm({...form,pix:e.target.value})} style={input}/></label></div><button onClick={salvar} style={button}>Salvar dados do designer</button>{msg&&<p style={{color:"#4ade80"}}>{msg}</p>}</section><section style={card}><h2>Artes deste designer</h2>{arts.length===0?<p style={{color:"#666"}}>Nenhuma arte cadastrada.</p>:arts.map(a=><div key={a.id} style={{borderTop:"1px solid #222",padding:"16px 0"}}><strong>{a.titulo}</strong><div style={grid}><label>Preço atual (R$)<input type="number" step="0.01" value={a.preco??0} onChange={e=>setArts(arts.map(x=>x.id===a.id?{...x,preco:e.target.value}:x))} style={input}/></label><label>Valor personalizado (R$)<input type="number" step="0.01" placeholder={`Padrão: R$ ${Number(d.valor_padrao_arte||20).toFixed(2)}`} value={a.valor_personalizado??""} onChange={e=>setArts(arts.map(x=>x.id===a.id?{...x,valor_personalizado:e.target.value}:x))} style={input}/></label></div><label style={{display:"block",marginTop:12}}><input type="checkbox" checked={!!a.exclusiva} onChange={e=>setArts(arts.map(x=>x.id===a.id?{...x,exclusiva:e.target.checked}:x))}/> Arte exclusiva</label><button onClick={()=>salvarArte(a)} style={{...button,marginTop:10}}>Salvar valor da arte</button></div>)}</section><section style={card}><h2>Comissões</h2><p>Total registrado: <strong>R$ {earn.reduce((s,e)=>s+Number(e.valor_comissao||0),0).toFixed(2).replace(".",",")}</strong></p>{earn.slice(0,20).map(e=><div key={e.id} style={{padding:"8px 0",borderTop:"1px solid #222"}}>{e.nome_arte} — R$ {Number(e.valor_comissao).toFixed(2).replace(".",",")} — {e.status}</div>)}</section><section style={card}><h2>Senha do designer</h2><p style={{color:"#94a3b8"}}>A senha atual nunca é exibida. Se o designer esquecer, ele pode usar “Esqueci minha senha” para receber um link de redefinição por e-mail.</p></section></div></main>}
-const card={background:"#111",border:"1px solid #333",borderRadius:12,padding:22,marginBottom:20};const grid={display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginBottom:16};const input={display:"block",width:"100%",boxSizing:"border-box" as const,marginTop:6,padding:10,borderRadius:8,border:"1px solid #333",background:"#050505",color:"#fff"};const button={padding:"10px 16px",border:0,borderRadius:8,background:"#2563eb",color:"#fff",fontWeight:700,cursor:"pointer"};
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+
+type Designer = {
+  id: number;
+  nome: string;
+  email: string;
+  whatsapp: string | null;
+  documento: string | null;
+  status: string;
+  percentual_comissao: number | string;
+  dados_pagamento: string | null;
+  pix: string | null;
+  created_at: string;
+};
+
+export default function DesignerConfig() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+
+  const [d, setD] = useState<Designer | null>(null);
+  const [form, setForm] = useState({
+    nome: "",
+    whatsapp: "",
+    documento: "",
+    dados_pagamento: "",
+    pix: "",
+    percentual_comissao: "40",
+  });
+  const [msg, setMsg] = useState("");
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregar() {
+      try {
+        const response = await fetch(`/api/admin/designers/${id}`);
+        const data = await response.json();
+
+        if (response.status === 401) {
+          router.push("/admin/login");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || "Não foi possível carregar o designer.");
+        }
+
+        if (!ativo) return;
+
+        const designer: Designer = data.designer;
+        setD(designer);
+        setForm({
+          nome: designer.nome || "",
+          whatsapp: designer.whatsapp || "",
+          documento: designer.documento || "",
+          dados_pagamento: designer.dados_pagamento || "",
+          pix: designer.pix || "",
+          percentual_comissao: String(designer.percentual_comissao ?? 40),
+        });
+      } catch (error) {
+        if (ativo) {
+          setErro(
+            error instanceof Error
+              ? error.message
+              : "Erro ao carregar o designer."
+          );
+        }
+      } finally {
+        if (ativo) setCarregando(false);
+      }
+    }
+
+    carregar();
+
+    return () => {
+      ativo = false;
+    };
+  }, [id, router]);
+
+  async function salvar() {
+    setMsg("");
+    setErro("");
+    setSalvando(true);
+
+    try {
+      const response = await fetch(`/api/admin/designers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          percentual_comissao: Number(form.percentual_comissao),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível salvar.");
+      }
+
+      setD((atual) =>
+        atual
+          ? {
+              ...atual,
+              ...form,
+              percentual_comissao: Number(form.percentual_comissao),
+            }
+          : atual
+      );
+
+      setMsg("Dados do designer salvos com sucesso.");
+    } catch (error) {
+      setErro(
+        error instanceof Error ? error.message : "Erro ao salvar os dados."
+      );
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (carregando) {
+    return (
+      <main style={estilos.pagina}>
+        Carregando dados do designer...
+      </main>
+    );
+  }
+
+  if (!d) {
+    return (
+      <main style={estilos.pagina}>
+        <p>{erro || "Designer não encontrado."}</p>
+        <button onClick={() => router.push("/admin")} style={estilos.botao}>
+          Voltar ao painel
+        </button>
+      </main>
+    );
+  }
+
+  return (
+    <main style={estilos.pagina}>
+      <div style={estilos.conteudo}>
+        <button
+          onClick={() => router.push("/admin")}
+          style={estilos.voltar}
+        >
+          ← Voltar ao painel
+        </button>
+
+        <h1 style={{ color: "#60a5fa" }}>Configurar designer</h1>
+
+        <section style={estilos.card}>
+          <h2>{d.nome}</h2>
+          <p style={{ color: "#94a3b8" }}>{d.email}</p>
+          <p>
+            Status atual: <strong>{d.status}</strong>
+          </p>
+          <p style={{ color: "#94a3b8" }}>
+            Cadastrado em:{" "}
+            {d.created_at
+              ? new Date(d.created_at).toLocaleDateString("pt-BR")
+              : "Não informado"}
+          </p>
+
+          <div style={estilos.grade}>
+            <label>
+              Nome
+              <input
+                value={form.nome}
+                onChange={(e) =>
+                  setForm({ ...form, nome: e.target.value })
+                }
+                style={estilos.input}
+              />
+            </label>
+
+            <label>
+              WhatsApp
+              <input
+                value={form.whatsapp}
+                onChange={(e) =>
+                  setForm({ ...form, whatsapp: e.target.value })
+                }
+                style={estilos.input}
+              />
+            </label>
+
+            <label>
+              Documento
+              <input
+                value={form.documento}
+                onChange={(e) =>
+                  setForm({ ...form, documento: e.target.value })
+                }
+                style={estilos.input}
+              />
+            </label>
+
+            <label>
+              Comissão (%)
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={form.percentual_comissao}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    percentual_comissao: e.target.value,
+                  })
+                }
+                style={estilos.input}
+              />
+            </label>
+
+            <label>
+              Chave PIX
+              <input
+                value={form.pix}
+                onChange={(e) =>
+                  setForm({ ...form, pix: e.target.value })
+                }
+                style={estilos.input}
+              />
+            </label>
+
+            <label>
+              Outros dados de pagamento
+              <input
+                value={form.dados_pagamento}
+                onChange={(e) =>
+                  setForm({ ...form, dados_pagamento: e.target.value })
+                }
+                style={estilos.input}
+              />
+            </label>
+          </div>
+
+          <button
+            onClick={salvar}
+            disabled={salvando}
+            style={estilos.botao}
+          >
+            {salvando ? "Salvando..." : "Salvar dados do designer"}
+          </button>
+
+          {msg && <p style={{ color: "#4ade80" }}>{msg}</p>}
+          {erro && <p style={{ color: "#f87171" }}>{erro}</p>}
+        </section>
+
+        <section style={estilos.card}>
+          <h2>Artes e comissões</h2>
+          <p style={{ color: "#94a3b8" }}>
+            Essa parte ficará disponível quando confirmarmos as tabelas
+            relacionadas no banco de dados.
+          </p>
+        </section>
+
+        <section style={estilos.card}>
+          <h2>Senha do designer</h2>
+          <p style={{ color: "#94a3b8" }}>
+            A senha atual nunca é exibida. Para redefini-la, o designer deve
+            utilizar o fluxo de recuperação de senha.
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+const estilos: Record<string, React.CSSProperties> = {
+  pagina: {
+    minHeight: "100vh",
+    background: "#000",
+    color: "#fff",
+    padding: 24,
+  },
+  conteudo: {
+    maxWidth: 1100,
+    margin: "0 auto",
+  },
+  card: {
+    background: "#111",
+    border: "1px solid #333",
+    borderRadius: 12,
+    padding: 22,
+    marginBottom: 20,
+  },
+  grade: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 14,
+    marginBottom: 16,
+  },
+  input: {
+    display: "block",
+    width: "100%",
+    boxSizing: "border-box",
+    marginTop: 6,
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #333",
+    background: "#050505",
+    color: "#fff",
+  },
+  botao: {
+    padding: "10px 16px",
+    border: 0,
+    borderRadius: 8,
+    background: "#2563eb",
+    color: "#fff",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  voltar: {
+    background: "transparent",
+    border: 0,
+    color: "#60a5fa",
+    cursor: "pointer",
+    padding: "8px 0",
+  },
+};

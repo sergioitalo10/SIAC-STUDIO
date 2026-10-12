@@ -41,37 +41,41 @@ export default function AdminDashboard() {
   }, [router]);
 
   useEffect(() => {
-    async function carregarDados() {
-      try {
-        const [resPedidos, resClientes, resDesigners] = await Promise.all([
-          fetch("/api/admin/pedidos"),
-          fetch("/api/admin/clientes"),
-          fetch("/api/admin/designers"),
-        ]);
+  async function carregarDados() {
+    try {
+      const [resPedidos, resClientes, resDesigners] = await Promise.all([
+        fetch("/api/admin/pedidos"),
+        fetch("/api/admin/clientes"),
+        fetch("/api/admin/designers"),
+      ]);
 
-        if (resPedidos.ok) {
-          const data = await resPedidos.json();
-          setPedidos(data.pedidos || []);
-        }
-
-        if (resClientes.ok) {
-          const data = await resClientes.json();
-          setClientes(data.clientes || []);
-        }
-
-        if (resDesigners.ok) {
-          const data = await resDesigners.json();
-          setDesigners(data.designers || []);
-        }
-      } catch (err) {
-        console.error("Erro ao carregar dados:", err);
-      } finally {
-        setLoading(false);
+      if (resPedidos.ok) {
+        const data = await resPedidos.json();
+        setPedidos(data.pedidos || []);
       }
-    }
 
-    carregarDados();
-  }, []);
+      if (resClientes.ok) {
+        const data = await resClientes.json();
+        setClientes(data.clientes || []);
+      }
+
+      if (resDesigners.ok) {
+        const data = await resDesigners.json();
+        console.log("Designers recebidos:", data.designers);
+        console.log("Quantidade recebida:", data.designers?.length);
+        setDesigners(data.designers || []);
+      } else {
+        console.error("Erro ao buscar designers:", resDesigners.status);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados do painel:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  carregarDados();
+}, []);
 
   function formatData(data: string) {
     return data.slice(0, 10);
@@ -269,7 +273,21 @@ export default function AdminDashboard() {
             cursor: "pointer",
           }}
         >
-          Sair
+           Sair
+        </button>
+
+        <button
+          onClick={() => router.push("/admin/configuracoes")}
+          style={{
+            background: "#2563eb",
+            color: "#ffffff",
+            border: "1px solid #2563eb",
+            borderRadius: "6px",
+            padding: "10px 16px",
+            cursor: "pointer",
+          }}
+        >
+          Configurações
         </button>
       </header>
 
