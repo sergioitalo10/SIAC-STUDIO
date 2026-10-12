@@ -260,10 +260,25 @@ export default function AdminDashboard() {
           <p style={{ margin: 0, color: "#94a3b8", fontSize: "14px" }}>Painel Admin</p>
         </div>
         <button
-          onClick={() => {
-            localStorage.removeItem("admin_logado");
-            router.push("/admin/login");
+          
+          onClick={async () => {
+            try {
+              const response = await fetch("/api/admin/logout", {
+                method: "POST",
+                credentials: "same-origin",
+              });
+
+              if (!response.ok) {
+                console.error("O servidor não confirmou o encerramento da sessão.");
+              }
+            } catch (error) {
+              console.error("Erro ao encerrar sessão:", error);
+            } finally {
+              localStorage.removeItem("admin_logado");
+              router.replace("/admin/login");
+            }
           }}
+
           style={{
             padding: "8px 16px",
             background: "transparent",
