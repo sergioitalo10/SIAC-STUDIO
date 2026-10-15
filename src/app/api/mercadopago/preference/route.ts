@@ -1,3 +1,4 @@
+
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
@@ -5,19 +6,16 @@ import { neon } from "@neondatabase/serverless";
 export async function POST(request: Request) {
   console.log("--> ROTA PREFERENCE CHAMADA (SIAC STUDIO)");
 
-  // Token fixado diretamente para isolar qualquer problema de leitura do ambiente
-  const accessToken = "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059";
-  console.log("--> TOKEN MP EXISTE?:", !!accessToken);
+  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
+
+  if (!accessToken) {
+    return NextResponse.json(
+      { error: "Pagamento temporariamente indisponível." },
+      { status: 500 }
+    );
+  }
 
   try {
-    if (!accessToken) {
-      console.error("ERRO: MERCADOPAGO_ACCESS_TOKEN é indefinido ou nulo.");
-      return NextResponse.json(
-        { error: "MERCADOPAGO_ACCESS_TOKEN não configurado no .env.local" },
-        { status: 500 }
-      );
-    }
-
     const dbUrl = (process.env.DATABASE_URL || "").trim();
     if (!dbUrl) {
       throw new Error("DATABASE_URL não configurada no ambiente.");

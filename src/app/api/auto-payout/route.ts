@@ -3,8 +3,13 @@
 
 import { neon } from "@neondatabase/serverless";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-session";
 
-const MP_TOKEN = process.env.MP_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059";
+const MP_TOKEN = (
+  process.env.MP_TOKEN ||
+  process.env.MERCADOPAGO_ACCESS_TOKEN ||
+  ""
+).trim();
 const DB_URL = process.env.DATABASE_URL || "";
 
 export async function runAutoPayout(): Promise<{ processed: number; success: number; failed: number; errors: string[] }> {
@@ -109,15 +114,33 @@ export async function runAutoPayout(): Promise<{ processed: number; success: num
 }
 
 // Endpoint para disparar manualmente (admin ou teste)
-export async function POST(request: Request) {
+
+export async function POST(_request: Request) {
   try {
-    if (!DB_URL) {
-      return NextResponse.json({ error: "DATABASE_URL não configurada" }, { status: 500 });
+    await requireAdmin();
+
+    if (!DB_URL || !MP_TOKEN) {
+      return NextResponse.json(
+        { error: "Serviço de repasses temporariamente indisponível." },
+        { status: 500 }
+      );
     }
 
     const result = await runAutoPayout();
     return NextResponse.json(result);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
+    console.error("Erro ao executar a rota de repasses automáticos.");
+    return NextResponse.json(
+      { error: "Não foi possível processar os repasses." },
+      { status: 500 }
+    );
   }
 }
+

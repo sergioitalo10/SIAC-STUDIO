@@ -567,32 +567,77 @@ export default function AdminDashboard() {
         </div>
 
         {/* Designers na Rede */}
-        <div style={{
-          background: "#111",
-          border: "1px solid #333",
-          borderRadius: "8px",
-          padding: "20px",
-        }}>
-          <h2 style={{ color: "#a78bfa", marginBottom: "15px" }}>Designers na Rede</h2>
-          {designers.length === 0 ? (
-            <p style={{ color: "#666" }}>Nenhum designer conectado</p>
-          ) : (
-            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-              {designers.map(d => (
-                <div key={d.id} style={{
-                  padding: "10px 0",
-                  borderBottom: "1px solid #222",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: "14px"
-                }}>
-                  <span><strong>{d.nome}</strong></span>
-                  <span style={{ color: "#666" }}>{d.email}</span>
-                </div>
-              ))}
+<div
+  style={{
+    background: "#111",
+    border: "1px solid #333",
+    borderRadius: "8px",
+    padding: "20px",
+  }}
+>
+  <h2 style={{ color: "#a78bfa", marginBottom: "15px" }}>
+    Designers na Rede
+  </h2>
+
+  {designers.length === 0 ? (
+    <p style={{ color: "#666" }}>
+      Nenhum designer cadastrado
+    </p>
+  ) : (
+    <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+      {designers.map((d) => (
+        <div
+          key={d.id}
+          style={{
+            padding: "12px 0",
+            borderBottom: "1px solid #222",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <strong style={{ color: "#fff" }}>{d.nome}</strong>
+
+            <div
+              style={{
+                color: "#94a3b8",
+                fontSize: "13px",
+                marginTop: "4px",
+                overflowWrap: "anywhere",
+              }}
+            >
+              {d.email}
             </div>
-          )}
+
+            <span style={{ color: "#666", fontSize: "12px" }}>
+              ID: {d.id}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/admin/designers/${d.id}`)}
+            style={{
+              padding: "8px 14px",
+              background: "#2563eb",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              fontWeight: 600,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            Configurar
+          </button>
         </div>
+      ))}
+    </div>
+  )}
+</div>
       </div>
       
       {/* Container invisível para impressão de relatórios */}

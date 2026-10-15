@@ -19,13 +19,29 @@ function getDatabase() {
 export async function GET(_: Request, { params }: RouteContext) {
   try {
     await requireAdmin();
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
 
+    console.error("Erro ao validar sessão administrativa.");
+
+    return NextResponse.json(
+      { error: "Não foi possível validar a sessão." },
+      { status: 500 }
+    );
+  }
+
+  try {
     const { id } = await params;
     const designerId = Number(id);
 
-    if (!Number.isInteger(designerId) || designerId <= 0) {
+    if (!Number.isSafeInteger(designerId) || designerId <= 0) {
       return NextResponse.json(
-        { error: "ID do designer inválido" },
+        { error: "ID do designer inválido." },
         { status: 400 }
       );
     }
@@ -46,22 +62,51 @@ export async function GET(_: Request, { params }: RouteContext) {
         created_at
       FROM designers
       WHERE id = ${designerId}
+      LIMIT 1
     `;
 
-    if (!designers.length) {
+    if (designers.length === 0) {
       return NextResponse.json(
-        { error: "Designer não encontrado" },
+        { error: "Designer não encontrado." },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({
-      designer: designers[0],
-      artworks: [],
-      earnings: [],
-    });
-  } catch (error) {
-    console.error("Erro ao consultar designer:", error);
+    const artworks = await sql`
+      SELECT
+        id,
+        designer_id,
+        titulo,
+        descricao,
+        categoria,
+        preco,
+        imagem_url,
+        thumbnail_url,
+        tags,
+        status,
+        valor_personalizado,
+        exclusiva,
+        criado_em,
+        atualizado_em
+      FROM designer_artworks
+      WHERE designer_id = ${designerId}
+      ORDER BY criado_em DESC
+    `;
+
+    return NextResponse.json(
+      {
+        designer: designers[0],
+        artworks,
+        earnings: [],
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  } catch {
+    console.error("Erro ao consultar designer e suas artes.");
 
     return NextResponse.json(
       { error: "Não foi possível consultar o designer." },

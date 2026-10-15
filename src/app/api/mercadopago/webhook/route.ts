@@ -2,20 +2,84 @@ import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { neon } from "@neondatabase/serverless";
 import { sendDesignerSaleNotification } from "@/lib/email";
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function validarAssinaturaWebhook(
+  request: Request,
+  secret: string
+): boolean {
+  const signature = request.headers.get("x-signature");
+  const requestId = request.headers.get("x-request-id");
+  const url = new URL(request.url);
+  const dataId = url.searchParams.get("data.id");
+
+  if (!signature || !requestId || !dataId) {
+    return false;
+  }
+
+  const parts = signature.split(",");
+  const ts = parts
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("ts="))
+    ?.slice(3);
+
+  const receivedHash = parts
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("v1="))
+    ?.slice(3);
+
+  if (!ts || !receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash)) {
+    return false;
+  }
+
+  const manifest =
+    `id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`;
+
+  const expectedHash = createHmac("sha256", secret)
+    .update(manifest)
+    .digest();
+
+  const receivedBuffer = Buffer.from(receivedHash, "hex");
+
+  return (
+    receivedBuffer.length === expectedHash.length &&
+    timingSafeEqual(receivedBuffer, expectedHash)
+  );
+}
 
 export async function POST(request: Request) {
   console.log("--> WEBHOOK MERCADO PAGO RECEBIDO");
 
   try {
-    const accessToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || "").trim()
-      || "APP_USR-1019679740284004-082521-49c4031fad060ecc2bcfc5b83bcf234a-131847059";
+    
+    const accessToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || "").trim();
+    const dbUrl = (process.env.DATABASE_URL || "").trim();
+    
+const webhookSecret = (
+  process.env.MERCADOPAGO_WEBHOOK_SECRET || ""
+).trim();
 
-    const dbUrl = (process.env.DATABASE_URL || "").trim()
-      || "postgresql://neondb_owner:***@ep-cool-darkness-a2j6x0xh.westus2.azure.neon.tech/siac-studio?sslmode=require";
+if (!webhookSecret) {
+  console.error("Webhook: segredo de assinatura não configurado.");
+  return NextResponse.json(
+    { error: "Serviço temporariamente indisponível." },
+    { status: 500 }
+  );
+}
+
+if (!validarAssinaturaWebhook(request, webhookSecret)) {
+  return NextResponse.json(
+    { error: "Assinatura inválida." },
+    { status: 401 }
+  );
+}
 
     if (!accessToken || !dbUrl) {
-      console.error("ERRO WEBHOOK: Variáveis de ambiente não configuradas.");
-      return NextResponse.json({ error: "Configuração ausente" }, { status: 500 });
+      console.error("Webhook: configuração de ambiente ausente.");
+      return NextResponse.json(
+        { error: "Serviço temporariamente indisponível." },
+        { status: 500 }
+      );
     }
 
     const { searchParams } = new URL(request.url);

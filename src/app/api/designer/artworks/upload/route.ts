@@ -1,29 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
+import crypto from "crypto";
+import { requireDesigner } from "@/lib/designer-session";
+
+export const runtime = "nodejs";
 
 const UPLOAD_DIR = path.join(process.cwd(), "arquivos", "upload");
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+
+function isRar(buffer: Buffer) {
+  const rar4 = Buffer.from([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00]);
+  const rar5 = Buffer.from([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00]);
+
+  return (
+    buffer.subarray(0, rar4.length).equals(rar4) ||
+    buffer.subarray(0, rar5.length).equals(rar5)
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
-    if (!fs.existsSync(UPLOAD_DIR)) {
-      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-    }
+    await requireDesigner();
 
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file");
 
-    if (!file) {
+    if (!(file instanceof File) || file.size === 0) {
       return NextResponse.json(
-        { error: "Nenhum arquivo enviado." },
+        { error: "Selecione um arquivo válido." },
         { status: 400 }
       );
     }
 
-    const fileName = file.name;
-    const ext = fileName.split(".").pop()?.toLowerCase();
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "O arquivo não pode ultrapassar 20 MB." },
+        { status: 413 }
+      );
+    }
 
-    if (ext !== "rar") {
+    if (path.extname(file.name).toLowerCase() !== ".rar") {
       return NextResponse.json(
         { error: "Apenas arquivos .rar são aceitos." },
         { status: 400 }
@@ -31,32 +48,44 @@ export async function POST(request: NextRequest) {
     }
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const filePath = path.join(UPLOAD_DIR, fileName);
 
-    if (fs.existsSync(filePath)) {
-      const nameWithoutExt = fileName.replace(".rar", "");
-      const timestamp = Date.now();
-      const newName = `${nameWithoutExt}_${timestamp}.rar`;
-      const newPath = path.join(UPLOAD_DIR, newName);
-      fs.writeFileSync(newPath, fileBuffer);
-      return NextResponse.json({
-        success: true,
-        message: "Arquivo enviado para análise.",
-        fileName: newName,
-      });
+    if (!isRar(fileBuffer)) {
+      return NextResponse.json(
+        { error: "O conteúdo enviado não parece ser um arquivo RAR válido." },
+        { status: 400 }
+      );
     }
 
-    fs.writeFileSync(filePath, fileBuffer);
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+
+    const fileName = `${crypto.randomUUID()}.rar`;
+    const filePath = path.join(UPLOAD_DIR, fileName);
+
+    await fs.writeFile(filePath, fileBuffer, { flag: "wx" });
 
     return NextResponse.json({
       success: true,
-      message: "Arquivo enviado para análise.",
+      message: "Arquivo recebido.",
       fileName,
     });
   } catch (error) {
-    console.error("Erro no upload:", error);
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { error: "Faça login para enviar arquivos." },
+        { status: 401 }
+      );
+    }
+
+    if (error instanceof Error && error.message === "DESIGNER_SUSPENSO") {
+      return NextResponse.json(
+        { error: "A conta está suspensa." },
+        { status: 403 }
+      );
+    }
+
+    console.error("Erro ao processar upload.");
     return NextResponse.json(
-      { error: "Erro ao processar o upload." },
+      { error: "Não foi possível processar o upload." },
       { status: 500 }
     );
   }

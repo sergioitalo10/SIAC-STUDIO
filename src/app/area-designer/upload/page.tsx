@@ -13,26 +13,67 @@ export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
 
-  useEffect(() => {
-    const sessao = localStorage.getItem("designer_sessao");
-    if (sessao) {
-      try {
-        const parsed = JSON.parse(sessao);
-        setSession(parsed);
-      } catch {
+  
+useEffect(() => {
+  let active = true;
+
+  async function verificarSessao() {
+    try {
+      const response = await fetch("/api/designer/auth/session", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      if (!active) return;
+
+      if (response.status === 401) {
         localStorage.removeItem("designer_sessao");
-        router.push("/area-designer/login");
+        router.replace("/area-designer/login");
+        return;
       }
-    } else {
-      router.push("/area-designer/login");
+
+      if (!response.ok) {
+        setError("Não foi possível verificar sua sessão. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!data.authenticated || !data.designer) {
+        localStorage.removeItem("designer_sessao");
+        router.replace("/area-designer/login");
+        return;
+      }
+
+      setSession(data.designer);
+      localStorage.setItem(
+        "designer_sessao",
+        JSON.stringify(data.designer)
+      );
+      setLoading(false);
+    } catch {
+      if (!active) return;
+
+      setError("Erro ao verificar a sessão. Verifique sua conexão.");
+      setLoading(false);
     }
-  }, [router]);
+  }
+
+  verificarSessao();
+
+  return () => {
+    active = false;
+  };
+}, [router]);
+
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
     if (!selected) return;
-    if (selected.size > 30 * 1024 * 1024) {
-      setError("Arquivo muito grande. Máximo 30MB.");
+    if (selected.size > 20 * 1024 * 1024) {
+      setError("Arquivo muito grande. Máximo 20MB.");
       setFile(null);
       setFileName("");
       const input1 = e.target as HTMLInputElement;
@@ -127,7 +168,7 @@ export default function UploadPage() {
               ✅ Não há propaganda do nome do designer na arte
             </li>
             <li>
-              ✅ O arquivo tem no máximo <strong>30MB</strong>
+              ✅ O arquivo tem no máximo <strong>20MB</strong>
             </li>
           </ul>
         </div>
@@ -137,7 +178,7 @@ export default function UploadPage() {
 
         <form onSubmit={handleUpload} style={styles.form}>
           <div style={styles.field}>
-            <label style={styles.label}>Arquivo .rar (máx. 30MB)</label>
+            <label style={styles.label}>Arquivo .rar (máx. 20MB)</label>
             <input
               type="file"
               accept=".rar"

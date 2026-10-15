@@ -53,14 +53,21 @@ export default function DashboardPage() {
       setDesigner(parsed);
       // Carrega artworks e earnings apenas se designer for válido
       if (parsed && parsed.id) {
-        Promise.all([
-          fetch(`/api/designer/artworks?designer_id=${parsed.id}`)
-            .then((r) => r.json())
-            .catch(() => ({ artworks: [] })),
-          fetch(`/api/designer/earnings?designer_id=${parsed.id}`)
-            .then((r) => r.json())
-            .catch(() => ({ earnings: [], total_comissao: 0 })),
-        ])
+       Promise.all([
+  fetch("/api/designer/artworks", {
+    credentials: "same-origin",
+  })
+    .then((r) => (r.ok ? r.json() : { artworks: [] }))
+    .catch(() => ({ artworks: [] })),
+
+  fetch("/api/designer/earnings", {
+    credentials: "same-origin",
+  })
+    .then((r) =>
+      r.ok ? r.json() : { earnings: [], total_comissao: 0 }
+    )
+    .catch(() => ({ earnings: [], total_comissao: 0 })),
+])
           .then(([artData, earnData]) => {
             setArtworks(artData.artworks || []);
             setEarnings(earnData.earnings || []);
@@ -133,15 +140,22 @@ export default function DashboardPage() {
             <div className="rounded-xl bg-blue-950/40 px-4 py-1.5 text-xs text-blue-400">
               <span className="font-semibold">{designer?.nome}</span>
             </div>
-            <button
-              onClick={() => {
-                localStorage.removeItem("designer_sessao");
-                router.push("/area-designer");
-              }}
-              className="rounded-lg border border-gray-700 px-4 py-2 text-xs font-semibold text-gray-400 transition hover:bg-gray-800 hover:text-white"
-            >
-              Sair
-            </button>
+           
+<button
+  onClick={async () => {
+    try {
+      await fetch("/api/designer/auth/logout", {
+        method: "POST",
+      });
+    } finally {
+      localStorage.removeItem("designer_sessao");
+      router.replace("/area-designer");
+    }
+  }}
+  className="rounded-lg border border-gray-700 px-4 py-2 text-xs font-semibold text-gray-400 transition hover:bg-gray-800 hover:text-white">
+ 
+  Sair
+</button>
           </div>
         </div>
       </header>
