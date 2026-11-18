@@ -1,3 +1,11 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
 model Produto {
   id        Int      @id @default(autoincrement())
   nome      String   @unique
@@ -32,29 +40,39 @@ model PedidoItem {
   quantidade Int
   preco      Float
 
-  pedido   Pedido @relation(fields: [pedidoId], references: [id])
+  pedido              Pedido            @relation(fields: [pedidoId], references: [id])
+  
   designer_artwork_id Int?
-  designer_id Int?
-  designer_nome String?
+  artwork             DesignerArtworks? @relation(fields: [designer_artwork_id], references: [id])
+  
+  designer_id         Int?
+  designer            Designer?         @relation(fields: [designer_id], references: [id])
+  
+  designer_nome       String?
 
   @@map("pedido_itens")
 }
 
-model Designers {
-  id              Int    @id @default(autoincrement())
-  nome            String
-  email           String @unique
-  senha           String
-  pix_key         String?
-  criado_em       DateTime @default(now())
+model Designer {
+  id               Int                @id @default(autoincrement())
+  nome             String
+  email            String             @unique
+  senha            String
+  pix_key          String?
+  comissao         Float              @default(40.0)
+  criado_em        DateTime           @default(now())
   blacklist_reason String?
-  blacklisted_at  DateTime?
+  blacklisted_at   DateTime?
+
+  artworks         DesignerArtworks[]
+  earnings         DesignerEarnings[]
+  pedido_itens     PedidoItem[]
 
   @@map("designers")
 }
 
 model DesignerArtworks {
-  id            Int      @id @default(autoincrement())
+  id            Int                @id @default(autoincrement())
   designer_id   Int
   titulo        String
   descricao     String?
@@ -63,45 +81,54 @@ model DesignerArtworks {
   imagem_url    String?
   arquivo_url   String?
   thumbnail_url String?
-  tags          String?  @db.Text
-  status        String   @default("pending")
+  tags          String?            @db.Text
+  status        String             @default("pending")
   observacoes   String?
   aprovado_em   DateTime?
   rejeitado_em  DateTime?
-  criado_em     DateTime @default(now())
+  criado_em     DateTime           @default(now())
 
-  designer   Designers @relation(fields: [designer_id], references: [id])
-  earnings   DesignerEarnings[]
+  designer      Designer           @relation(fields: [designer_id], references: [id])
+  earnings      DesignerEarnings[]
+  pedido_itens  PedidoItem[]
 
   @@map("designer_artworks")
 }
 
 model DesignerEarnings {
-  id               Int      @id @default(autoincrement())
-  pedido_id        Int
+  id                  Int              @id @default(autoincrement())
+  pedido_id           Int
   designer_artwork_id Int
-  designer_id      Int
-  valor_venda      Float
-  valor_comissao   Float
-  status           String   @default("pendente")
-  criado_em        DateTime @default(now())
+  designer_id         Int
+  valor_venda         Float
+  valor_comissao      Float
+  status              String           @default("pendente")
+  criado_em           DateTime         @default(now())
 
-  artwork   DesignerArtworks @relation(fields: [designer_artwork_id], references: [id])
-  designer  Designers        @relation(fields: [designer_id], references: [id])
-  payouts   DesignerPayout[]
+  artwork             DesignerArtworks @relation(fields: [designer_artwork_id], references: [id])
+  designer            Designer         @relation(fields: [designer_id], references: [id])
+  payouts             DesignerPayout[]
 
   @@map("designer_earnings")
 }
 
 model DesignerPayout {
-  id           Int      @id @default(autoincrement())
-  earning_id   Int
+  id            Int              @id @default(autoincrement())
+  earning_id    Int
   mp_payment_id String?
-  valor        Float
-  status       String   @default("pendente")
-  criado_em    DateTime @default(now())
+  valor         Float
+  status        String           @default("pendente")
+  criado_em     DateTime         @default(now())
 
-  earning DesignerEarnings @relation(fields: [earning_id], references: [id])
+  earning       DesignerEarnings @relation(fields: [earning_id], references: [id])
 
   @@map("designer_payouts")
+}
+
+model AdminConfig {
+  id       Int    @id @default(autoincrement())
+  usuario  String @unique @default("admin")
+  senha    String 
+
+  @@map("admin_config")
 }

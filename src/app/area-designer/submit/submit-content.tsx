@@ -1,13 +1,29 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-interface Designer {
+type Designer = {
   id: number;
-  nome: string;
-  email: string;
-}
+  nome?: string;
+  email?: string;
+  status?: string;
+};
+
+type Artwork = {
+  id: number;
+  titulo: string;
+  descricao?: string | null;
+  categoria?: string | null;
+  preco: number | string;
+  imagem_url?: string | null;
+  thumbnail_url?: string | null;
+  arquivo_url?: string | null;
+  tags?: string[] | string | null;
+};
+
+type UploadTipo = "preview" | "rar";
 
 export default function SubmitContent() {
   const router = useRouter();
@@ -15,313 +31,545 @@ export default function SubmitContent() {
   const editId = searchParams.get("edit");
 
   const [designer, setDesigner] = useState<Designer | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [loadingDados, setLoadingDados] = useState(true);
+  const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [sucesso, setSucesso] = useState("");
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("");
-  const [preco, setPreco] = useState("");
+  const [preco, setPreco] = useState("20");
+
+  const [preview1, setPreview1] = useState<File | null>(null);
+  const [preview2, setPreview2] = useState<File | null>(null);
+  const [rar, setRar] = useState<File | null>(null);
+
   const [imagemUrl, setImagemUrl] = useState("");
-  const [arquivoUrl, setArquivoUrl] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [arquivoUrl, setArquivoUrl] = useState("");
+
+  const [preview1Local, setPreview1Local] = useState("");
+  const [preview2Local, setPreview2Local] = useState("");
 
   useEffect(() => {
-    const sessao = localStorage.getItem("designer_sessao");
-    if (!sessao) {
-      router.push("/area-designer");
+    if (!preview1) {
+      setPreview1Local("");
       return;
     }
-    setDesigner(JSON.parse(sessao));
 
-    if (editId && designer) {
-      fetch(`/api/designer/artworks?designer_id=${designer.id}`)
-        .then((r) => r.json())
-        .then((data) => {
-          const artwork = (data.artworks || []).find((a: any) => a.id === Number(editId));
-          if (artwork) {
-            setTitulo(artwork.titulo || "");
-            setDescricao(artwork.descricao || "");
-            setCategoria(artwork.categoria || "");
-            setPreco(artwork.preco?.toString() || "");
-            setImagemUrl(artwork.imagem_url || "");
-            setArquivoUrl(artwork.arquivo_url || "");
-            setThumbnailUrl(artwork.thumbnail_url || "");
-          }
-        })
-        .catch(() => setErro("Erro ao carregar dados"));
+    const url = URL.createObjectURL(preview1);
+    setPreview1Local(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [preview1]);
+
+  useEffect(() => {
+    if (!preview2) {
+      setPreview2Local("");
+      return;
     }
-  }, [router, editId, designer]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+    const url = URL.createObjectURL(preview2);
+    setPreview2Local(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [preview2]);
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarDesigner() {
+      try {
+        const sessao = localStorage.getItem("designer_sessao");
+
+        if (!sessao) {
+          router.replace("/area-designer/login");
+          return;
+        }
+
+        const dados = JSON.parse(sessao);
+        const id = Number(dados.id ?? dados.designer?.id);
+
+        if (!Number.isFinite(id) || id <= 0) {
+          localStorage.removeItem("designer_sessao");
+          router.replace("/area-designer/login");
+          return;
+        }
+
+        if (ativo) {
+          setDesigner({
+            id,
+            nome: dados.nome ?? dados.designer?.nome,
+            email: dados.email ?? dados.designer?.email,
+            status: dados.status ?? dados.designer?.status,
+          });
+        }
+      } catch {
+        if (ativo) {
+          setErro("Não foi possível validar a sessão do designer.");
+          setLoadingDados(false);
+        }
+      }
+    }
+
+    carregarDesigner();
+
+    return () => {
+      ativo = false;
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (!designer) return;
+
+    let ativo = true;
+
+    async function carregarArte() {
+      if (!editId) {
+        setLoadingDados(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/designer/artworks?artwork_id=${encodeURIComponent(editId)}`,
+          { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Não foi possível carregar a arte.");
+        }
+
+        const arte: Artwork | undefined = data.artwork;
+
+        if (!arte) {
+          throw new Error("A arte solicitada não foi encontrada.");
+        }
+
+        if (!ativo) return;
+
+        setTitulo(arte.titulo ?? "");
+        setDescricao(arte.descricao ?? "");
+        setCategoria(arte.categoria ?? "");
+        setPreco(String(arte.preco ?? "20"));
+        setImagemUrl(arte.imagem_url ?? "");
+        setThumbnailUrl(arte.thumbnail_url ?? "");
+        setArquivoUrl(arte.arquivo_url ?? "");
+      } catch (e) {
+        if (ativo) {
+          setErro(
+            e instanceof Error
+              ? e.message
+              : "Erro ao carregar os dados da arte."
+          );
+        }
+      } finally {
+        if (ativo) setLoadingDados(false);
+      }
+    }
+
+    carregarArte();
+
+    return () => {
+      ativo = false;
+    };
+  }, [designer, editId]);
+
+  const enviarArquivo = useCallback(
+    async (file: File, tipo: UploadTipo): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tipo", tipo);
+
+      const response = await fetch("/api/designer/artworks/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success || !data.key) {
+        throw new Error(
+          data.error ||
+            `Falha ao enviar ${file.name}. Verifique o tipo e o tamanho do arquivo.`
+        );
+      }
+
+      return data.key as string;
+    },
+    []
+  );
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setErro("");
-
-    if (!titulo.trim()) {
-      setErro("Preencha o título");
-      return;
-    }
-
-    if (!preco || isNaN(Number(preco)) || Number(preco) <= 0) {
-      setErro("Preencha um preço válido");
-      return;
-    }
+    setSucesso("");
 
     if (!designer) {
-      setErro("Sessão inválida");
+      setErro("Sua sessão de designer não foi identificada. Entre novamente.");
       return;
     }
 
-    setLoading(true);
+    const valor = Number(preco.replace(",", "."));
+
+    if (!titulo.trim()) {
+      setErro("Informe o título da arte.");
+      return;
+    }
+
+    if (!Number.isFinite(valor) || valor <= 0) {
+      setErro("Informe um preço válido maior que zero.");
+      return;
+    }
+
+    if (!editId && (!preview1 || !preview2 || !rar)) {
+      setErro("Selecione os dois previews PNG e o arquivo original RAR.");
+      return;
+    }
+
+    if (preview1 && !preview1.name.toLowerCase().endsWith(".png")) {
+      setErro("O Preview 1 deve ser um arquivo PNG.");
+      return;
+    }
+
+    if (preview2 && !preview2.name.toLowerCase().endsWith(".png")) {
+      setErro("O Preview 2 deve ser um arquivo PNG.");
+      return;
+    }
+
+    if (rar && !rar.name.toLowerCase().endsWith(".rar")) {
+      setErro("O arquivo original deve estar no formato RAR.");
+      return;
+    }
+
+    setSalvando(true);
 
     try {
-      const body: any = {
-        designer_id: designer.id,
+      // Cada chamada envia somente um arquivo para a rota de upload.
+      // Os dois previews usam tipo="preview"; o original usa tipo="rar".
+      const novaImagemUrl = preview1
+        ? await enviarArquivo(preview1, "preview")
+        : imagemUrl;
+
+      const novaThumbnailUrl = preview2
+        ? await enviarArquivo(preview2, "preview")
+        : thumbnailUrl;
+
+      const novoArquivoUrl = rar
+        ? await enviarArquivo(rar, "rar")
+        : arquivoUrl;
+
+      if (!novaImagemUrl || !novaThumbnailUrl || !novoArquivoUrl) {
+        throw new Error(
+          "A arte precisa ter Preview 1, Preview 2 e arquivo original. Selecione os arquivos que estiverem faltando."
+        );
+      }
+
+      const body: Record<string, unknown> = {
         titulo: titulo.trim(),
-        descricao: descricao.trim() || null,
-        categoria: categoria.trim() || null,
-        preco: Number(preco),
-        imagem_url: imagemUrl.trim() || null,
-        arquivo_url: arquivoUrl.trim() || null,
-        thumbnail_url: thumbnailUrl.trim() || null,
+        descricao: descricao.trim(),
+        categoria: categoria.trim(),
+        preco: valor,
+        imagem_url: novaImagemUrl,
+        thumbnail_url: novaThumbnailUrl,
+        arquivo_url: novoArquivoUrl,
       };
 
       const url = editId
-        ? `/api/designer/artworks?artwork_id=${editId}`
+        ? `/api/designer/artworks?artwork_id=${encodeURIComponent(editId)}`
         : "/api/designer/artworks";
 
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
-        setErro(data.error || "Erro ao enviar");
-        return;
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível salvar a arte.");
       }
 
-      setSubmitted(true);
-    } catch {
-      setErro("Erro de conexão");
+      setSucesso(
+        editId
+          ? "Arte atualizada e enviada para nova análise administrativa."
+          : "Arte cadastrada e enviada para análise administrativa."
+      );
+
+      setTimeout(() => {
+        router.push("/area-designer/dashboard");
+      }, 1200);
+    } catch (e) {
+      setErro(
+        e instanceof Error
+          ? e.message
+          : "Ocorreu um erro ao enviar a arte."
+      );
     } finally {
-      setLoading(false);
+      setSalvando(false);
     }
   }
 
-  if (loading && !editId) {
-    return (
-      <main className="min-h-screen bg-black text-white">
-        <div className="flex items-center justify-center py-20">
-          <p className="text-gray-400">Carregando...</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (erro && !loading) {
-    return (
-      <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto max-w-md px-6 py-12">
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center">
-            <p className="text-red-400 font-semibold">{erro}</p>
-            <button
-              onClick={() => router.back()}
-              className="mt-4 rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
-            >
-              Voltar
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <main className="min-h-screen bg-black text-white">
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="text-5xl mb-4">✅</div>
-            <h1 className="text-2xl font-bold">Arte enviada!</h1>
-            <p className="mt-2 text-gray-400">
-              Agora aguarde a aprovação do administrador.
-            </p>
-            <div className="mt-6 rounded-xl bg-blue-950/40 p-5">
-              <p className="text-sm font-semibold text-blue-400">O que acontece agora?</p>
-              <p className="mt-2 text-xs text-gray-400 leading-relaxed">
-                1. O admin recebe um aviso e verifica sua arte no painel.<br />
-                2. Se aprovada, sua arte aparece no catálogo do site.<br />
-                3. Cada venda gera 40% de comissão para você.
-              </p>
-            </div>
-            <button
-              onClick={() => router.push("/area-designer/dashboard")}
-              className="mt-8 rounded-lg bg-blue-600 px-8 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
-            >
-              Ir para o dashboard
-            </button>
-          </div>
-        </div>
-      </main>
-    );
+  if (loadingDados) {
+    return <main style={styles.container}>Carregando dados...</main>;
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <header className="border-b border-gray-800 sticky top-0 z-40 bg-black/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <a href="/" className="text-2xl font-bold">
-              SIAC <span className="text-blue-500">STUDIO</span>
-            </a>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500">
-              Enviar Arte
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-blue-950/40 px-4 py-1.5 text-xs text-blue-400">
-              <span className="font-semibold">{designer?.nome}</span>
-            </div>
-            <button
-              onClick={() => router.push("/area-designer/dashboard")}
-              className="rounded-lg border border-gray-700 px-4 py-2 text-xs font-semibold text-gray-400 transition hover:bg-gray-800 hover:text-white"
-            >
-              Dashboard
-            </button>
-          </div>
-        </div>
-      </header>
+    <main style={styles.container}>
+      <section style={styles.card}>
+        <h1 style={styles.title}>
+          {editId ? "Editar arte" : "Enviar nova arte"}
+        </h1>
 
-      <section className="mx-auto max-w-2xl px-6 py-12">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">
-            {editId ? "Editar arte" : "Enviar nova arte"}
-          </h1>
-          <span className="text-xs text-gray-500">
-            40% de cada venda é seu • A aprovação do admin é necessária
-          </span>
-        </div>
+        <p style={styles.subtitle}>
+          Envie dois previews PNG e o arquivo original RAR.
+        </p>
 
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
-          {erro && (
-            <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-              <p className="text-sm font-semibold text-red-400">{erro}</p>
-            </div>
-          )}
+        {erro && <div style={styles.error}>{erro}</div>}
+        {sucesso && <div style={styles.success}>{sucesso}</div>}
 
-          <div className="space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-semibold">Título da Arte *</label>
-              <input
-                type="text"
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                placeholder="Ex: Pantera Roxa - Verão 2025"
-                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <label style={styles.label} htmlFor="titulo">
+            Título da arte
+          </label>
+          <input
+            id="titulo"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            maxLength={150}
+            required
+            style={styles.input}
+            placeholder="Nome da arte"
+          />
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold">Descrição</label>
-              <textarea
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Descreva sua arte, técnicas, inspirações..."
-                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-blue-500 resize-none"
-                rows={3}
-              />
-            </div>
+          <label style={styles.label} htmlFor="descricao">
+            Descrição
+          </label>
+          <textarea
+            id="descricao"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            rows={4}
+            style={styles.input}
+            placeholder="Descreva sua arte"
+          />
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-semibold">Categoria</label>
-                <select
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none focus:border-blue-500"
-                >
-                  <option value="">Selecione...</option>
-                  <option value="Interclasses">Interclasses</option>
-                  <option value="Lançamentos">Lançamentos</option>
-                  <option value="Estatísticas">Estatísticas</option>
-                  <option value="Animais">Animais</option>
-                  <option value="Fantasia">Fantasia</option>
-                  <option value="Outros">Outros</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold">Preço (R$) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="1"
-                  value={preco}
-                  onChange={(e) => setPreco(e.target.value)}
-                  placeholder="20.00"
-                  className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-            </div>
+          <label style={styles.label} htmlFor="categoria">
+            Categoria
+          </label>
+          <input
+            id="categoria"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            style={styles.input}
+            placeholder="Ex.: camisetas, sublimação..."
+          />
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold">Seu preview.png aqui</label>
-              <input
-                type="file"
-                accept=".png"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setImagemUrl(URL.createObjectURL(file));
-                  }
-                }}
-                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 file:cursor-pointer"
-              />
-              <p className="mt-1 text-xs text-gray-500">Seu preview.png aqui</p>
-            </div>
+          <label style={styles.label} htmlFor="preco">
+            Preço (R$)
+          </label>
+          <input
+            id="preco"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={preco}
+            onChange={(e) => setPreco(e.target.value)}
+            required
+            style={styles.input}
+          />
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold">Seu arquivo.rar aqui <span className="text-blue-400">(CDR, PDF e FONT)</span></label>
-              <input
-                type="file"
-                accept=".rar"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setArquivoUrl(URL.createObjectURL(file));
-                  }
-                }}
-                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-3 text-white outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 file:cursor-pointer"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                O .rar deve conter: <span className="text-blue-400">CDR, PDF e FONT</span> compactados
-              </p>
-            </div>
+          <div style={styles.uploadGroup}>
+            <label style={styles.label} htmlFor="preview1">
+              Preview 1 — preview.png
+            </label>
+            <input
+              id="preview1"
+              type="file"
+              accept=".png,image/png"
+              required={!editId || !imagemUrl}
+              onChange={(e) => setPreview1(e.target.files?.[0] ?? null)}
+              style={styles.fileInput}
+            />
+            {imagemUrl && !preview1 && (
+              <p style={styles.hint}>Preview 1 atual mantido se não substituir.</p>
+            )}
+            {preview1Local && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview1Local} alt="Prévia do Preview 1" style={styles.preview} />
+            )}
           </div>
 
-          <div className="mt-8 flex gap-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-500 disabled:opacity-50"
-            >
-              {loading ? "Enviando..." : editId ? "Re-enviar como nova versão" : "Enviar arte"}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/area-designer/dashboard")}
-              className="rounded-lg border border-gray-700 px-6 py-3 text-sm font-semibold text-gray-400 transition hover:bg-gray-800 hover:text-white"
-            >
-              Cancelar
-            </button>
+          <div style={styles.uploadGroup}>
+            <label style={styles.label} htmlFor="preview2">
+              Preview 2 — preview2.png
+            </label>
+            <input
+              id="preview2"
+              type="file"
+              accept=".png,image/png"
+              required={!editId || !thumbnailUrl}
+              onChange={(e) => setPreview2(e.target.files?.[0] ?? null)}
+              style={styles.fileInput}
+            />
+            {thumbnailUrl && !preview2 && (
+              <p style={styles.hint}>Preview 2 atual mantido se não substituir.</p>
+            )}
+            {preview2Local && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview2Local} alt="Prévia do Preview 2" style={styles.preview} />
+            )}
           </div>
+
+          <div style={styles.uploadGroup}>
+            <label style={styles.label} htmlFor="rar">
+              Arquivo original — .rar
+            </label>
+            <input
+              id="rar"
+              type="file"
+              accept=".rar,application/vnd.rar,application/x-rar-compressed"
+              required={!editId || !arquivoUrl}
+              onChange={(e) => setRar(e.target.files?.[0] ?? null)}
+              style={styles.fileInput}
+            />
+            {arquivoUrl && !rar && (
+              <p style={styles.hint}>Arquivo original atual mantido se não substituir.</p>
+            )}
+          </div>
+
+          <button type="submit" disabled={salvando} style={styles.button}>
+            {salvando
+              ? "Enviando..."
+              : editId
+                ? "Salvar alterações"
+                : "Enviar arte para análise"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/area-designer/dashboard")}
+            disabled={salvando}
+            style={styles.secondaryButton}
+          >
+            Voltar ao dashboard
+          </button>
         </form>
       </section>
     </main>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  container: {
+    minHeight: "100vh",
+    padding: "32px 16px",
+    background: "#f4f6f8",
+    color: "#17202a",
+  },
+  card: {
+    maxWidth: 720,
+    margin: "0 auto",
+    padding: 28,
+    borderRadius: 14,
+    background: "#fff",
+    boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
+  },
+  title: {
+    margin: "0 0 8px",
+    fontSize: 28,
+    fontWeight: 700,
+  },
+  subtitle: {
+    margin: "0 0 24px",
+    color: "#5d6873",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+  label: {
+    marginTop: 8,
+    fontWeight: 600,
+  },
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "12px",
+    border: "1px solid #cbd2d9",
+    borderRadius: 8,
+    fontSize: 16,
+    background: "#fff",
+    color: "#17202a",
+  },
+  fileInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: 10,
+    border: "1px solid #cbd2d9",
+    borderRadius: 8,
+    background: "#fff",
+  },
+  uploadGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    marginTop: 8,
+    padding: 14,
+    border: "1px solid #e0e5e9",
+    borderRadius: 10,
+  },
+  hint: {
+    margin: 0,
+    fontSize: 13,
+    color: "#5d6873",
+  },
+  preview: {
+    display: "block",
+    maxWidth: "100%",
+    maxHeight: 260,
+    objectFit: "contain",
+    alignSelf: "flex-start",
+    borderRadius: 8,
+    border: "1px solid #e0e5e9",
+  },
+  button: {
+    marginTop: 18,
+    padding: "13px 18px",
+    border: 0,
+    borderRadius: 8,
+    background: "#17202a",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  secondaryButton: {
+    padding: "12px 18px",
+    border: "1px solid #cbd2d9",
+    borderRadius: 8,
+    background: "#fff",
+    color: "#17202a",
+    fontSize: 15,
+    cursor: "pointer",
+  },
+  error: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
+    background: "#fdecec",
+    color: "#a61b1b",
+  },
+  success: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
+    background: "#e8f7ec",
+    color: "#176b35",
+  },
+};

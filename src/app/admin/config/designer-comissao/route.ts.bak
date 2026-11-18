@@ -1,0 +1,32 @@
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { designerId, comissao } = body;
+
+    if (!designerId || comissao === undefined) {
+      return NextResponse.json(
+        { error: "Dados incompletos. ID e comissão são obrigatórios." },
+        { status: 400 }
+      );
+    }
+
+    // Atualiza a comissão do designer no banco de dados via Prisma
+    const designerAtualizado = await prisma.designer.update({
+      where: { id: Number(designerId) },
+      data: { comissao: Number(comissao) },
+    });
+
+    return NextResponse.json({ success: true, designer: designerAtualizado });
+  } catch (error: any) {
+    console.error("Erro ao atualizar comissão:", error);
+    return NextResponse.json(
+      { error: "Erro interno ao atualizar a comissão no banco de dados." },
+      { status: 500 }
+    );
+  }
+}

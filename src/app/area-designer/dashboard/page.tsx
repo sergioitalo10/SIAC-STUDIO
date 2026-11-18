@@ -208,7 +208,18 @@ export default function DashboardPage() {
 
         {/* TABELA DE ARTS */}
         <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6">
-          <h2 className="text-xl font-bold">Suas artes enviadas</h2>
+  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <h2 className="text-xl font-bold">Suas artes enviadas</h2>
+
+    <button
+      type="button"
+      onClick={() => router.push("/area-designer/submit")}
+      className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500"
+    >
+      <span aria-hidden="true">+</span>
+      Enviar nova arte
+    </button>
+  </div>
 
           {artworks.length === 0 ? (
             <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900 p-8 text-center">

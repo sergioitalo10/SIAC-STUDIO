@@ -1,7 +1,7 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
-import type { CSSProperties } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 type Designer = {
@@ -26,22 +26,99 @@ type Artwork = {
   preco: number | string;
   imagem_url: string | null;
   thumbnail_url: string | null;
+  arquivo_url?: string | null;
   tags: string[] | null;
   status: string;
   valor_personalizado: number | string | null;
   exclusiva: boolean;
   criado_em: string;
   atualizado_em: string;
+  observacoes?: string | null;
 };
 
+type FormDesigner = {
+  nome: string;
+  whatsapp: string;
+  documento: string;
+  dados_pagamento: string;
+  pix: string;
+  percentual_comissao: string;
+};
+
+const painel: React.CSSProperties = {
+  minHeight: "100vh",
+  padding: 24,
+  background: "#050505",
+  color: "#f5f5f5",
+};
+
+const card: React.CSSProperties = {
+  background: "#111",
+  border: "1px solid #303030",
+  borderRadius: 12,
+  padding: 20,
+  marginBottom: 20,
+};
+
+const input: React.CSSProperties = {
+  display: "block",
+  boxSizing: "border-box",
+  width: "100%",
+  marginTop: 6,
+  padding: 10,
+  borderRadius: 7,
+  border: "1px solid #444",
+  background: "#080808",
+  color: "#fff",
+};
+
+const botao: React.CSSProperties = {
+  padding: "10px 14px",
+  border: "1px solid #444",
+  borderRadius: 8,
+  background: "#222",
+  color: "#fff",
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+const grade: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 14,
+  margin: "18px 0",
+};
+
+function statusLegivel(status: string) {
+  const valores: Record<string, string> = {
+    pending: "Pendente",
+    approved: "Aprovada",
+    rejected: "Reprovada",
+    pendente: "Pendente",
+    aprovado: "Aprovado",
+    suspenso: "Suspenso",
+  };
+
+  return valores[status?.toLowerCase()] || status || "Não informado";
+}
+
+function dataLegivel(data?: string) {
+  if (!data) return "Não informado";
+
+  const valor = new Date(data);
+  return Number.isNaN(valor.getTime())
+    ? "Não informado"
+    : valor.toLocaleString("pt-BR");
+}
+
 export default function DesignerConfig() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = String(params.id);
   const router = useRouter();
 
-  const [d, setD] = useState<Designer | null>(null);
+  const [designer, setDesigner] = useState<Designer | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
-
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormDesigner>({
     nome: "",
     whatsapp: "",
     documento: "",
@@ -50,79 +127,71 @@ export default function DesignerConfig() {
     percentual_comissao: "40",
   });
 
-  const [msg, setMsg] = useState("");
-  const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-
   const [salvandoArte, setSalvandoArte] = useState<number | null>(null);
-  const [mensagemArte, setMensagemArte] = useState("");
-  const [erroArte, setErroArte] = useState("");
+  const [revisandoArte, setRevisandoArte] = useState<number | null>(null);
+  const [mensagem, setMensagem] = useState("");
+  const [erro, setErro] = useState("");
 
-  useEffect(() => {
-    let ativo = true;
+  const carregar = useCallback(async () => {
+    setCarregando(true);
+    setErro("");
 
-    async function carregar() {
-      try {
-        const response = await fetch(`/api/admin/designers/${id}`, {
-          cache: "no-store",
-        });
+    try {
+      const resposta = await fetch(`/api/admin/designers/${id}`, {
+        cache: "no-store",
+      });
 
-        const data = await response.json();
+      const dados = await resposta.json().catch(() => ({}));
 
-        if (response.status === 401) {
-          router.push("/admin/login");
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            data.error || "Não foi possível carregar o designer."
-          );
-        }
-
-        if (!ativo) return;
-
-        const designer: Designer = data.designer;
-
-        setD(designer);
-        setArtworks(Array.isArray(data.artworks) ? data.artworks : []);
-
-        setForm({
-          nome: designer.nome || "",
-          whatsapp: designer.whatsapp || "",
-          documento: designer.documento || "",
-          dados_pagamento: designer.dados_pagamento || "",
-          pix: designer.pix || "",
-          percentual_comissao: String(
-            designer.percentual_comissao ?? 40
-          ),
-        });
-      } catch (error) {
-        if (ativo) {
-          setErro(
-            error instanceof Error
-              ? error.message
-              : "Erro ao carregar o designer."
-          );
-        }
-      } finally {
-        if (ativo) setCarregando(false);
+      if (resposta.status === 401) {
+        router.push("/admin/login");
+        return;
       }
+
+      if (!resposta.ok) {
+        throw new Error(dados.error || "Não foi possível carregar o designer.");
+      }
+
+      const d: Designer = dados.designer;
+
+      if (!d) {
+        throw new Error("O servidor não retornou os dados do designer.");
+      }
+
+      setDesigner(d);
+      setArtworks(Array.isArray(dados.artworks) ? dados.artworks : []);
+
+      setForm({
+        nome: d.nome || "",
+        whatsapp: d.whatsapp || "",
+        documento: d.documento || "",
+        dados_pagamento: d.dados_pagamento || "",
+        pix: d.pix || "",
+        percentual_comissao: String(d.percentual_comissao ?? 40),
+      });
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao carregar os dados.");
+    } finally {
+      setCarregando(false);
     }
-
-    carregar();
-
-    return () => {
-      ativo = false;
-    };
   }, [id, router]);
 
-  async function salvar() {
-    setMsg("");
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
+
+  async function salvarDesigner() {
+    setMensagem("");
     setErro("");
 
     const percentual = Number(form.percentual_comissao);
+
+    if (!form.nome.trim()) {
+      setErro("Informe o nome do designer.");
+      return;
+    }
 
     if (
       form.percentual_comissao.trim() === "" ||
@@ -134,35 +203,31 @@ export default function DesignerConfig() {
       return;
     }
 
-    if (!form.nome.trim()) {
-      setErro("O nome do designer não pode ficar vazio.");
-      return;
-    }
-
     setSalvando(true);
 
     try {
-      const response = await fetch(`/api/admin/designers/${id}`, {
+      const resposta = await fetch(`/api/admin/designers/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          nome: form.nome.trim(),
           percentual_comissao: percentual,
         }),
       });
 
-      const data = await response.json();
+      const dados = await resposta.json().catch(() => ({}));
 
-      if (response.status === 401) {
+      if (resposta.status === 401) {
         router.push("/admin/login");
         return;
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || "Não foi possível salvar.");
+      if (!resposta.ok) {
+        throw new Error(dados.error || "Não foi possível salvar o designer.");
       }
 
-      setD((atual) =>
+      setDesigner((atual) =>
         atual
           ? {
               ...atual,
@@ -176,13 +241,9 @@ export default function DesignerConfig() {
           : atual
       );
 
-      setMsg("Dados do designer salvos com sucesso.");
-    } catch (error) {
-      setErro(
-        error instanceof Error
-          ? error.message
-          : "Erro ao salvar os dados."
-      );
+      setMensagem("Dados do designer salvos com sucesso.");
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao salvar o designer.");
     } finally {
       setSalvando(false);
     }
@@ -211,113 +272,174 @@ export default function DesignerConfig() {
   }
 
   async function salvarArte(arte: Artwork) {
-    setMensagemArte("");
-    setErroArte("");
+    setMensagem("");
+    setErro("");
 
-    const preco =
-      typeof arte.preco === "string" ? arte.preco.trim() : arte.preco;
+    const precoTexto = String(arte.preco ?? "").trim();
+    const preco = Number(precoTexto);
 
-    const valorOriginal = arte.valor_personalizado;
     const valorTexto =
-      valorOriginal == null ? "" : String(valorOriginal).trim();
+      arte.valor_personalizado == null
+        ? ""
+        : String(arte.valor_personalizado).trim();
 
-    const precoNumero = Number(preco);
-    const valorNumero = valorTexto === "" ? null : Number(valorTexto);
+    const valorPersonalizado =
+      valorTexto === "" ? null : Number(valorTexto);
 
-    if (
-      preco === "" ||
-      !Number.isFinite(precoNumero) ||
-      precoNumero < 0
-    ) {
-      setErroArte(`Informe um preço válido para "${arte.titulo}".`);
+    if (precoTexto === "" || !Number.isFinite(preco) || preco < 0) {
+      setErro(`Informe um preço válido para "${arte.titulo}".`);
       return;
     }
 
     if (
-      valorNumero !== null &&
-      (!Number.isFinite(valorNumero) || valorNumero < 0)
+      valorPersonalizado !== null &&
+      (!Number.isFinite(valorPersonalizado) || valorPersonalizado < 0)
     ) {
-      setErroArte(
-        `O valor personalizado de "${arte.titulo}" é inválido.`
-      );
+      setErro(`O valor personalizado de "${arte.titulo}" é inválido.`);
       return;
     }
 
     setSalvandoArte(arte.id);
 
     try {
-      const response = await fetch(
+      const resposta = await fetch(
         `/api/admin/designers/${id}/artworks`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             artwork_id: arte.id,
-            preco: precoNumero,
-            valor_personalizado: valorNumero,
+            preco,
+            valor_personalizado: valorPersonalizado,
             exclusiva: arte.exclusiva,
           }),
         }
       );
 
-      const data = await response.json();
+      const dados = await resposta.json().catch(() => ({}));
 
-      if (response.status === 401) {
+      if (resposta.status === 401) {
         router.push("/admin/login");
         return;
       }
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || `Não foi possível salvar "${arte.titulo}".`
-        );
+      if (!resposta.ok) {
+        throw new Error(dados.error || "Não foi possível salvar a arte.");
       }
 
-      if (data.artwork) {
-        setArtworks((atuais) =>
-          atuais.map((item) =>
-            item.id === arte.id
-              ? {
-                  ...item,
-                  preco: data.artwork.preco,
-                  valor_personalizado:
-                    data.artwork.valor_personalizado,
-                  exclusiva: data.artwork.exclusiva,
-                  atualizado_em: data.artwork.atualizado_em,
-                }
-              : item
-          )
-        );
-      }
-
-      setMensagemArte(`Arte "${arte.titulo}" salva com sucesso.`);
-    } catch (error) {
-      setErroArte(
-        error instanceof Error
-          ? error.message
-          : "Erro ao salvar a arte."
+      setArtworks((atuais) =>
+        atuais.map((item) =>
+          item.id === arte.id
+            ? {
+                ...item,
+                preco: dados.artwork?.preco ?? preco,
+                valor_personalizado:
+                  dados.artwork?.valor_personalizado ?? valorPersonalizado,
+                exclusiva: dados.artwork?.exclusiva ?? arte.exclusiva,
+                atualizado_em:
+                  dados.artwork?.atualizado_em ?? item.atualizado_em,
+              }
+            : item
+        )
       );
+
+      setMensagem(`Alterações da arte "${arte.titulo}" salvas.`);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao salvar a arte.");
     } finally {
       setSalvandoArte(null);
     }
   }
 
-  if (carregando) {
-    return (
-      <main style={estilos.pagina}>
-        Carregando dados do designer...
-      </main>
-    );
+  async function revisarArte(arte: Artwork, acao: "aprovar" | "rejeitar") {
+    setMensagem("");
+    setErro("");
+
+    if (acao === "aprovar") {
+      const confirmou = window.confirm(
+        `Deseja aprovar a arte "${arte.titulo}"?`
+      );
+
+      if (!confirmou) return;
+    }
+
+    let observacoes: string | null = null;
+
+    if (acao === "rejeitar") {
+      const motivo = window.prompt(
+        `Informe o motivo da reprovação de "${arte.titulo}" (opcional):`
+      );
+
+      if (motivo === null) return;
+      observacoes = motivo.trim() || null;
+    }
+
+    setRevisandoArte(arte.id);
+
+    try {
+      const resposta = await fetch(
+        `/api/admin/designers/${id}/artworks`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            artwork_id: arte.id,
+            acao,
+            observacoes,
+          }),
+        }
+      );
+
+      const dados = await resposta.json().catch(() => ({}));
+
+      if (resposta.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados.error ||
+            "A ação de revisão não foi concluída. Verifique a rota administrativa."
+        );
+      }
+
+      setArtworks((atuais) =>
+        atuais.map((item) =>
+          item.id === arte.id
+            ? {
+                ...item,
+                status: dados.artwork?.status || (
+                  acao === "aprovar" ? "approved" : "rejected"
+                ),
+                observacoes:
+                  dados.artwork?.observacoes ?? observacoes,
+              }
+            : item
+        )
+      );
+
+      setMensagem(
+        acao === "aprovar"
+          ? `A arte "${arte.titulo}" foi aprovada.`
+          : `A arte "${arte.titulo}" foi reprovada.`
+      );
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao revisar a arte.");
+    } finally {
+      setRevisandoArte(null);
+    }
   }
 
-  if (!d) {
+  if (carregando) {
+    return <main style={painel}>Carregando dados do designer...</main>;
+  }
+
+  if (!designer) {
     return (
-      <main style={estilos.pagina}>
+      <main style={painel}>
         <p>{erro || "Designer não encontrado."}</p>
-        <button
-          onClick={() => router.push("/admin")}
-          style={estilos.botao}
-        >
+        <button style={botao} onClick={() => router.push("/admin")}>
           Voltar ao painel
         </button>
       </main>
@@ -325,69 +447,82 @@ export default function DesignerConfig() {
   }
 
   return (
-    <main style={estilos.pagina}>
-      <div style={estilos.conteudo}>
+    <main style={painel}>
+      <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <button
+          style={{ ...botao, marginBottom: 18 }}
           onClick={() => router.push("/admin")}
-          style={estilos.voltar}
         >
           ← Voltar ao painel
         </button>
 
-        <h1 style={estilos.titulo}>Configurar designer</h1>
+        <h1 style={{ color: "#60a5fa", marginBottom: 8 }}>
+          Configurar designer
+        </h1>
 
-        <section style={estilos.card}>
-          <h2>{d.nome}</h2>
-          <p style={estilos.secundario}>{d.email}</p>
+        <p style={{ color: "#aaa", marginBottom: 22 }}>
+          ID: {designer.id} · {designer.email}
+        </p>
 
-          <p>
-            Status atual: <strong>{d.status}</strong>
+        {mensagem && (
+          <p role="status" style={{ color: "#4ade80" }}>
+            {mensagem}
+          </p>
+        )}
+
+        {erro && (
+          <p role="alert" style={{ color: "#f87171" }}>
+            {erro}
+          </p>
+        )}
+
+        <section style={card}>
+          <h2>Dados do parceiro</h2>
+          <p style={{ color: "#aaa" }}>
+            Status atual: <strong>{statusLegivel(designer.status)}</strong>
+          </p>
+          <p style={{ color: "#aaa" }}>
+            Cadastro: {dataLegivel(designer.created_at)}
           </p>
 
-          <p style={estilos.secundario}>
-            Cadastrado em:{" "}
-            {d.created_at
-              ? new Date(d.created_at).toLocaleDateString("pt-BR")
-              : "Não informado"}
-          </p>
-
-          <div style={estilos.grade}>
+          <div style={grade}>
             <label>
               Nome
               <input
+                style={input}
                 value={form.nome}
                 onChange={(e) =>
                   setForm({ ...form, nome: e.target.value })
                 }
-                style={estilos.input}
               />
             </label>
 
             <label>
               WhatsApp
               <input
+                style={input}
                 value={form.whatsapp}
                 onChange={(e) =>
                   setForm({ ...form, whatsapp: e.target.value })
                 }
-                style={estilos.input}
               />
             </label>
 
             <label>
               Documento
               <input
+                style={input}
                 value={form.documento}
                 onChange={(e) =>
                   setForm({ ...form, documento: e.target.value })
                 }
-                style={estilos.input}
               />
             </label>
 
             <label>
               Comissão (%)
               <input
+                style={input}
                 type="number"
                 min="0"
                 max="100"
@@ -399,24 +534,24 @@ export default function DesignerConfig() {
                     percentual_comissao: e.target.value,
                   })
                 }
-                style={estilos.input}
               />
             </label>
 
             <label>
               Chave PIX
               <input
+                style={input}
                 value={form.pix}
                 onChange={(e) =>
                   setForm({ ...form, pix: e.target.value })
                 }
-                style={estilos.input}
               />
             </label>
 
             <label>
               Outros dados de pagamento
               <input
+                style={input}
                 value={form.dados_pagamento}
                 onChange={(e) =>
                   setForm({
@@ -424,278 +559,281 @@ export default function DesignerConfig() {
                     dados_pagamento: e.target.value,
                   })
                 }
-                style={estilos.input}
               />
             </label>
           </div>
 
           <button
-            onClick={salvar}
+            style={botao}
             disabled={salvando}
-            style={{
-              ...estilos.botao,
-              ...(salvando ? estilos.botaoDesabilitado : {}),
-            }}
+            onClick={salvarDesigner}
           >
             {salvando ? "Salvando..." : "Salvar dados do designer"}
           </button>
-
-          {msg && <p style={estilos.sucesso}>{msg}</p>}
-          {erro && <p style={estilos.erro}>{erro}</p>}
         </section>
 
-        <section style={estilos.card}>
-          <h2>Artes e comissões</h2>
-
-          <p style={estilos.secundario}>
-            Artes cadastradas: {artworks.length}
+        <section style={card}>
+          <h2>Artes para revisão</h2>
+          <p style={{ color: "#aaa" }}>
+            Total de artes cadastradas: {artworks.length}
           </p>
 
-          {mensagemArte && (
-            <p style={estilos.sucesso}>{mensagemArte}</p>
-          )}
-
-          {erroArte && <p style={estilos.erro}>{erroArte}</p>}
-
           {artworks.length === 0 ? (
-            <p style={estilos.secundario}>
+            <p style={{ color: "#aaa" }}>
               Nenhuma arte cadastrada para este designer.
             </p>
           ) : (
-            <div style={estilos.listaArtes}>
-              {artworks.map((arte) => (
-                <article key={arte.id} style={estilos.cardArte}>
-                  <div style={estilos.cabecalhoArte}>
-                    {arte.thumbnail_url || arte.imagem_url ? (
-                      <img
-                        src={
-                          arte.thumbnail_url ||
-                          arte.imagem_url ||
-                          undefined
-                        }
-                        alt={arte.titulo}
-                        style={estilos.imagemArte}
-                      />
-                    ) : (
-                      <div style={estilos.semImagem}>
-                        Sem imagem
-                      </div>
-                    )}
+            <div style={{ display: "grid", gap: 18 }}>
+              {artworks.map((arte) => {
+                const base =
+                  `/api/admin/designers/${id}/artworks/${arte.id}/file`;
 
-                    <div style={estilos.dadosArte}>
-                      <h3>{arte.titulo}</h3>
-                      <p style={estilos.secundario}>
-                        ID: {arte.id}
-                        {arte.categoria
-                          ? ` · ${arte.categoria}`
-                          : ""}
-                      </p>
-                      <p>
-                        Status: <strong>{arte.status}</strong>
-                      </p>
-                    </div>
-                  </div>
+                const imagem1 = arte.imagem_url
+                  ? `${base}?tipo=preview1`
+                  : null;
 
-                  <div style={estilos.grade}>
-                    <label>
-                      Preço (R$)
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={String(arte.preco ?? "")}
-                        onChange={(e) =>
-                          alterarArte(
-                            arte.id,
-                            "preco",
-                            e.target.value
-                          )
-                        }
-                        style={estilos.input}
-                      />
-                    </label>
+                const imagem2 = arte.thumbnail_url
+                  ? `${base}?tipo=preview2`
+                  : null;
 
-                    <label>
-                      Valor personalizado (R$)
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Deixe vazio para não definir"
-                        value={
-                          arte.valor_personalizado == null
-                            ? ""
-                            : String(arte.valor_personalizado)
-                        }
-                        onChange={(e) =>
-                          alterarArte(
-                            arte.id,
-                            "valor_personalizado",
-                            e.target.value
-                          )
-                        }
-                        style={estilos.input}
-                      />
-                    </label>
-                  </div>
-
-                  <label style={estilos.checkbox}>
-                    <input
-                      type="checkbox"
-                      checked={arte.exclusiva}
-                      onChange={(e) =>
-                        alterarArte(
-                          arte.id,
-                          "exclusiva",
-                          e.target.checked
-                        )
-                      }
-                    />
-                    Arte exclusiva
-                  </label>
-
-                  <button
-                    onClick={() => salvarArte(arte)}
-                    disabled={salvandoArte !== null}
+                return (
+                  <article
+                    key={arte.id}
                     style={{
-                      ...estilos.botao,
-                      ...(salvandoArte !== null
-                        ? estilos.botaoDesabilitado
-                        : {}),
+                      background: "#080808",
+                      border: "1px solid #333",
+                      borderRadius: 10,
+                      padding: 16,
                     }}
                   >
-                    {salvandoArte === arte.id
-                      ? "Salvando arte..."
-                      : "Salvar alterações da arte"}
-                  </button>
-                </article>
-              ))}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(190px, 1fr))",
+                        gap: 16,
+                      }}
+                    >
+                      <div>
+                        <h3 style={{ marginTop: 0 }}>{arte.titulo}</h3>
+                        <p style={{ color: "#aaa" }}>
+                          Arte #{arte.id}
+                          {arte.categoria ? ` · ${arte.categoria}` : ""}
+                        </p>
+                        <p>
+                          Status: <strong>{statusLegivel(arte.status)}</strong>
+                        </p>
+                        <p style={{ color: "#aaa" }}>
+                          Enviada: {dataLegivel(arte.criado_em)}
+                        </p>
+                        {arte.descricao && <p>{arte.descricao}</p>}
+                        {arte.tags?.length ? (
+                          <p style={{ color: "#aaa" }}>
+                            Tags: {arte.tags.join(", ")}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {imagem1 ? (
+                        <div>
+                          <p>Prévia principal</p>
+                          <a href={imagem1} target="_blank" rel="noreferrer">
+                            <img
+                              src={imagem1}
+                              alt={`Prévia principal de ${arte.titulo}`}
+                              style={{
+                                width: "100%",
+                                maxWidth: 300,
+                                maxHeight: 300,
+                                objectFit: "contain",
+                                background: "#222",
+                                borderRadius: 8,
+                              }}
+                            />
+                          </a>
+                        </div>
+                      ) : (
+                        <p style={{ color: "#aaa" }}>
+                          Prévia principal não informada.
+                        </p>
+                      )}
+
+                      {imagem2 ? (
+                        <div>
+                          <p>Segunda prévia</p>
+                          <a href={imagem2} target="_blank" rel="noreferrer">
+                            <img
+                              src={imagem2}
+                              alt={`Segunda prévia de ${arte.titulo}`}
+                              style={{
+                                width: "100%",
+                                maxWidth: 300,
+                                maxHeight: 300,
+                                objectFit: "contain",
+                                background: "#222",
+                                borderRadius: 8,
+                              }}
+                            />
+                          </a>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div style={grade}>
+                      <label>
+                        Preço (R$)
+                        <input
+                          style={input}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={String(arte.preco ?? "")}
+                          onChange={(e) =>
+                            alterarArte(arte.id, "preco", e.target.value)
+                          }
+                        />
+                      </label>
+
+                      <label>
+                        Valor personalizado (R$)
+                        <input
+                          style={input}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Deixe vazio para não definir"
+                          value={
+                            arte.valor_personalizado == null
+                              ? ""
+                              : String(arte.valor_personalizado)
+                          }
+                          onChange={(e) =>
+                            alterarArte(
+                              arte.id,
+                              "valor_personalizado",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <label
+                      style={{
+                        display: "flex",
+                        gap: 9,
+                        alignItems: "center",
+                        marginBottom: 16,
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={Boolean(arte.exclusiva)}
+                        onChange={(e) =>
+                          alterarArte(
+                            arte.id,
+                            "exclusiva",
+                            e.target.checked
+                          )
+                        }
+                      />
+                      Arte exclusiva
+                    </label>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 10,
+                      }}
+                    >
+                      <button
+                        style={botao}
+                        disabled={
+                          salvandoArte !== null || revisandoArte !== null
+                        }
+                        onClick={() => salvarArte(arte)}
+                      >
+                        {salvandoArte === arte.id
+                          ? "Salvando..."
+                          : "Salvar preço e exclusividade"}
+                      </button>
+
+                      {arte.arquivo_url && (
+                        <a
+                          href={`${base}?tipo=original`}
+                          style={{
+                            ...botao,
+                            display: "inline-block",
+                            textDecoration: "none",
+                          }}
+                        >
+                          Baixar arquivo original
+                        </a>
+                      )}
+
+                      {arte.status !== "approved" &&
+                        arte.status !== "aprovado" && (
+                          <button
+                            style={{
+                              ...botao,
+                              background: "#14532d",
+                              borderColor: "#166534",
+                            }}
+                            disabled={
+                              salvandoArte !== null ||
+                              revisandoArte !== null
+                            }
+                            onClick={() => revisarArte(arte, "aprovar")}
+                          >
+                            {revisandoArte === arte.id
+                              ? "Processando..."
+                              : "Aprovar arte"}
+                          </button>
+                        )}
+
+                      {arte.status !== "rejected" &&
+                        arte.status !== "reprovado" &&
+                        arte.status !== "rejeitado" && (
+                          <button
+                            style={{
+                              ...botao,
+                              background: "#7f1d1d",
+                              borderColor: "#991b1b",
+                            }}
+                            disabled={
+                              salvandoArte !== null ||
+                              revisandoArte !== null
+                            }
+                            onClick={() => revisarArte(arte, "rejeitar")}
+                          >
+                            {revisandoArte === arte.id
+                              ? "Processando..."
+                              : "Reprovar arte"}
+                          </button>
+                        )}
+                    </div>
+
+                    {arte.observacoes && (
+                      <p style={{ color: "#fca5a5", marginTop: 14 }}>
+                        Observações: {arte.observacoes}
+                      </p>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
 
-        <section style={estilos.card}>
+        <section style={card}>
           <h2>Senha do designer</h2>
-          <p style={estilos.secundario}>
-            A senha atual nunca é exibida. Para redefini-la, o designer
-            deve utilizar o fluxo de recuperação de senha.
+          <p style={{ color: "#aaa" }}>
+            A senha atual nunca é exibida nesta tela. A recuperação deve ser
+            feita pelo fluxo de redefinição de senha.
           </p>
         </section>
       </div>
     </main>
   );
 }
-
-const estilos: Record<string, CSSProperties> = {
-  pagina: {
-    minHeight: "100vh",
-    background: "#000",
-    color: "#fff",
-    padding: 24,
-  },
-  conteudo: {
-    maxWidth: 1100,
-    margin: "0 auto",
-  },
-  titulo: {
-    color: "#60a5fa",
-  },
-  card: {
-    background: "#111",
-    border: "1px solid #333",
-    borderRadius: 12,
-    padding: 22,
-    marginBottom: 20,
-  },
-  grade: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 14,
-    marginBottom: 16,
-  },
-  input: {
-    display: "block",
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: 6,
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #333",
-    background: "#050505",
-    color: "#fff",
-  },
-  botao: {
-    padding: "10px 16px",
-    border: 0,
-    borderRadius: 8,
-    background: "#2563eb",
-    color: "#fff",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  botaoDesabilitado: {
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
-  voltar: {
-    background: "transparent",
-    border: 0,
-    color: "#60a5fa",
-    cursor: "pointer",
-    padding: "8px 0",
-  },
-  secundario: {
-    color: "#94a3b8",
-  },
-  sucesso: {
-    color: "#4ade80",
-  },
-  erro: {
-    color: "#f87171",
-  },
-  listaArtes: {
-    display: "grid",
-    gap: 16,
-  },
-  cardArte: {
-    background: "#080808",
-    border: "1px solid #333",
-    borderRadius: 10,
-    padding: 16,
-  },
-  cabecalhoArte: {
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    marginBottom: 16,
-    flexWrap: "wrap",
-  },
-  imagemArte: {
-    width: 100,
-    height: 100,
-    objectFit: "cover",
-    borderRadius: 8,
-    background: "#222",
-  },
-  semImagem: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    background: "#222",
-    color: "#94a3b8",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 12,
-  },
-  dadosArte: {
-    flex: 1,
-    minWidth: 180,
-  },
-  checkbox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-};

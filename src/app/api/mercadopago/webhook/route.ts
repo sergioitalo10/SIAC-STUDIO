@@ -1,8 +1,11 @@
+
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { neon } from "@neondatabase/serverless";
 import { sendDesignerSaleNotification } from "@/lib/email";
 import { createHmac, timingSafeEqual } from "node:crypto";
+
+export const runtime = "nodejs";
 
 function validarAssinaturaWebhook(
   request: Request,
@@ -13,22 +16,35 @@ function validarAssinaturaWebhook(
   const url = new URL(request.url);
   const dataId = url.searchParams.get("data.id");
 
-  if (!signature || !requestId || !dataId) {
-    return false;
-  }
+  if (!signature || !requestId || !dataId) return false;
 
-  const parts = signature.split(",");
-  const ts = parts
-    .map((part) => part.trim())
-    .find((part) => part.startsWith("ts="))
-    ?.slice(3);
-
+  const parts = signature.split(",").map((part) => part.trim());
+  const ts = parts.find((part) => part.startsWith("ts="))?.slice(3);
   const receivedHash = parts
-    .map((part) => part.trim())
     .find((part) => part.startsWith("v1="))
     ?.slice(3);
 
-  if (!ts || !receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash)) {
+  if (
+    !ts ||
+    !/^\d+$/.test(ts) ||
+    !receivedHash ||
+    !/^[a-f0-9]{64}$/i.test(receivedHash)
+  ) {
+    return false;
+  }
+
+  // Aceita timestamp Unix em segundos ou milissegundos.
+  const timestampNumber = Number(ts);
+  const timestampMs =
+    timestampNumber < 1_000_000_000_000
+      ? timestampNumber * 1000
+      : timestampNumber;
+
+  // Tolerância de 10 minutos contra notificações muito antigas ou futuras.
+  if (
+    !Number.isFinite(timestampMs) ||
+    Math.abs(Date.now() - timestampMs) > 10 * 60 * 1000
+  ) {
     return false;
   }
 
@@ -47,34 +63,25 @@ function validarAssinaturaWebhook(
   );
 }
 
-export async function POST(request: Request) {
-  console.log("--> WEBHOOK MERCADO PAGO RECEBIDO");
+function paraCentavos(value: unknown): number | null {
+  const numberValue = Number(value);
 
+  if (!Number.isFinite(numberValue) || numberValue < 0) {
+    return null;
+  }
+
+  return Math.round(numberValue * 100);
+}
+
+export async function POST(request: Request) {
   try {
-    
     const accessToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || "").trim();
     const dbUrl = (process.env.DATABASE_URL || "").trim();
-    
-const webhookSecret = (
-  process.env.MERCADOPAGO_WEBHOOK_SECRET || ""
-).trim();
+    const webhookSecret = (
+      process.env.MERCADOPAGO_WEBHOOK_SECRET || ""
+    ).trim();
 
-if (!webhookSecret) {
-  console.error("Webhook: segredo de assinatura não configurado.");
-  return NextResponse.json(
-    { error: "Serviço temporariamente indisponível." },
-    { status: 500 }
-  );
-}
-
-if (!validarAssinaturaWebhook(request, webhookSecret)) {
-  return NextResponse.json(
-    { error: "Assinatura inválida." },
-    { status: 401 }
-  );
-}
-
-    if (!accessToken || !dbUrl) {
+    if (!accessToken || !dbUrl || !webhookSecret) {
       console.error("Webhook: configuração de ambiente ausente.");
       return NextResponse.json(
         { error: "Serviço temporariamente indisponível." },
@@ -82,108 +89,295 @@ if (!validarAssinaturaWebhook(request, webhookSecret)) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
+    const url = new URL(request.url);
     const body = await request.json().catch(() => ({}));
 
-    const topic = searchParams.get("topic") || searchParams.get("type") || body.type || body.topic;
-    const paymentId = searchParams.get("data.id") || body.data?.id || searchParams.get("id") || body.id;
+    const topic =
+      url.searchParams.get("type") ||
+      url.searchParams.get("topic") ||
+      body?.type ||
+      body?.topic;
 
-    console.log(`--> TIPO DE NOTIFICAÇÃO: ${topic} | PAYMENT ID: ${paymentId}`);
+    const paymentId = url.searchParams.get("data.id");
 
-    if (topic === "payment" || (paymentId && !topic)) {
-      if (!paymentId) {
-        return NextResponse.json({ ok: true, message: "ID de pagamento não informado" });
-      }
+    // Ignora notificações que não são de pagamento.
+    if (topic && topic !== "payment") {
+      return NextResponse.json({ ok: true, ignored: true });
+    }
 
-      const client = new MercadoPagoConfig({ accessToken });
-      const payment = new Payment(client);
-      const paymentData = await payment.get({ id: paymentId });
+    // Para processar pagamentos, exigimos o ID assinado na URL.
+    if (!paymentId || !/^\d+$/.test(paymentId)) {
+      return NextResponse.json(
+        { error: "Identificador de pagamento inválido." },
+        { status: 400 }
+      );
+    }
 
-      const statusPagamento = paymentData.status;
-      const pedidoId = paymentData.external_reference;
+    if (!validarAssinaturaWebhook(request, webhookSecret)) {
+      console.warn("Webhook: assinatura inválida.");
+      return NextResponse.json(
+        { error: "Assinatura inválida." },
+        { status: 401 }
+      );
+    }
 
-      console.log(`--> PEDIDO #${pedidoId} | STATUS MP: ${statusPagamento}`);
+    const client = new MercadoPagoConfig({ accessToken });
+    const payment = new Payment(client);
 
-      if (statusPagamento === "approved" && pedidoId) {
-        const sql = neon(dbUrl);
+    // Os dados oficiais são consultados diretamente no Mercado Pago.
+    const paymentData = await payment.get({ id: paymentId });
 
-        await sql`
-          UPDATE pedidos
-          SET status = 'pago'
-          WHERE id = ${Number(pedidoId)}
-        `;
+    if (paymentData.status !== "approved") {
+      return NextResponse.json({
+        ok: true,
+        ignored: true,
+        reason: "Pagamento ainda não aprovado.",
+      });
+    }
 
-        console.log(`✅ PEDIDO #${pedidoId} ATUALIZADO PARA 'pago' COM SUCESSO!`);
+    if (paymentData.currency_id !== "BRL") {
+      console.error("Webhook: moeda diferente de BRL.", {
+        paymentId,
+        currency: paymentData.currency_id,
+      });
 
-        // Registrar earnings dos designers (40% por venda) — status pendente para fluxo de payout
-        const itensComDesigner: any[] = await sql`
+      return NextResponse.json({
+        ok: true,
+        ignored: true,
+        reason: "Moeda não aceita.",
+      });
+    }
+
+    const pedidoId = paymentData.external_reference;
+
+    // Não convertemos o ID para Number, pois pedidos.id é BIGINT.
+    if (
+      typeof pedidoId !== "string" ||
+      !/^[1-9]\d*$/.test(pedidoId)
+    ) {
+      console.error("Webhook: referência de pedido inválida.", {
+        paymentId,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        ignored: true,
+        reason: "Referência de pedido inválida.",
+      });
+    }
+
+    const amountCents = paraCentavos(paymentData.transaction_amount);
+
+    if (amountCents === null) {
+      return NextResponse.json({
+        ok: true,
+        ignored: true,
+        reason: "Valor de pagamento inválido.",
+      });
+    }
+
+    const sql = neon(dbUrl);
+
+    const pedidos = (await sql`
+      SELECT id, total, status
+      FROM pedidos
+      WHERE id = ${pedidoId}
+      LIMIT 1
+    `) as Record<string, unknown>[];
+
+    if (pedidos.length === 0) {
+      console.error("Webhook: pedido não encontrado.", { pedidoId });
+
+      return NextResponse.json({
+        ok: true,
+        ignored: true,
+        reason: "Pedido não encontrado.",
+      });
+    }
+
+    const pedido = pedidos[0];
+    const totalPedidoCents = paraCentavos(pedido.total);
+
+    if (
+      totalPedidoCents === null ||
+      totalPedidoCents !== amountCents
+    ) {
+      console.error("Webhook: valor do pagamento não corresponde ao pedido.", {
+        pedidoId,
+        paymentId,
+        valorPagamentoCentavos: amountCents,
+        valorPedidoCentavos: totalPedidoCents,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        ignored: true,
+        reason: "Valor do pagamento diferente do pedido.",
+      });
+    }
+
+    /*
+     * Uma única instrução SQL atualiza o pedido e registra as comissões.
+     * A restrição UNIQUE (pedido_id, designer_artwork_id) da migração
+     * impede comissões duplicadas quando o webhook é repetido.
+     */
+    const resultado = (await sql`
+      WITH pedido_validado AS MATERIALIZED (
+        SELECT id
+        FROM pedidos
+        WHERE id = ${pedidoId}
+          AND ROUND(total * 100) = ${amountCents}
+      ),
+      pedido_atualizado AS (
+        UPDATE pedidos AS p
+        SET status = 'pago'
+        FROM pedido_validado AS pv
+        WHERE p.id = pv.id
+        RETURNING p.id
+      ),
+      comissoes_inseridas AS (
+        INSERT INTO designer_earnings (
+          pedido_id,
+          designer_artwork_id,
+          designer_id,
+          valor_venda,
+          percentual_comissao,
+          valor_comissao,
+          status
+        )
+        SELECT
+          itens.pedido_id,
+          itens.designer_artwork_id,
+          itens.designer_id,
+          itens.valor_venda,
+          itens.percentual_comissao,
+          ROUND(
+            itens.valor_venda * itens.percentual_comissao / 100,
+            2
+          ),
+          'pendente'
+        FROM (
           SELECT
-            pi.id,
+            pi.pedido_id,
             pi.designer_artwork_id,
-            pi.designer_id,
-            pi.designer_nome,
-            pi.preco,
-            da.preco as preco_artwork
-          FROM pedido_itens pi
-          LEFT JOIN designer_artworks da ON da.id = pi.designer_artwork_id
-          WHERE pi.pedido_id = ${Number(pedidoId)}
-            AND pi.designer_artwork_id IS NOT NULL
-        `;
+            COALESCE(pi.designer_id, da.designer_id) AS designer_id,
+            ROUND(
+              SUM(pi.preco * COALESCE(pi.quantidade, 1)),
+              2
+            ) AS valor_venda,
+            COALESCE(d.percentual_comissao, 40.00)::numeric(5,2)
+              AS percentual_comissao
+          FROM pedido_itens AS pi
+          JOIN designer_artworks AS da
+            ON da.id = pi.designer_artwork_id
+          JOIN designers AS d
+            ON d.id = COALESCE(pi.designer_id, da.designer_id)
+          JOIN pedido_validado AS pv
+            ON pv.id = pi.pedido_id
+          WHERE pi.designer_artwork_id IS NOT NULL
+            AND pi.preco IS NOT NULL
+            AND pi.quantidade > 0
+          GROUP BY
+            pi.pedido_id,
+            pi.designer_artwork_id,
+            COALESCE(pi.designer_id, da.designer_id),
+            COALESCE(d.percentual_comissao, 40.00)
+        ) AS itens
+        ON CONFLICT (pedido_id, designer_artwork_id) DO NOTHING
+        RETURNING
+          id,
+          pedido_id,
+          designer_artwork_id,
+          designer_id,
+          valor_venda,
+          percentual_comissao,
+          valor_comissao
+      )
+      SELECT
+        pv.id AS pedido_validado_id,
+        ci.id AS earning_id,
+        ci.pedido_id,
+        ci.designer_artwork_id,
+        ci.designer_id,
+        ci.valor_venda,
+        ci.percentual_comissao,
+        ci.valor_comissao,
+        d.email AS designer_email,
+        d.nome AS designer_nome
+      FROM pedido_validado AS pv
+      LEFT JOIN comissoes_inseridas AS ci
+        ON ci.pedido_id = pv.id
+      LEFT JOIN designers AS d
+        ON d.id = ci.designer_id
+    `) as Record<string, unknown>[];
 
-        for (const item of itensComDesigner) {
-          const designerId = item.designer_id;
-          const designerArtworkId = item.designer_artwork_id;
-          const precoVenda = item.preco || item.preco_artwork || 0;
-          const comissao = Number(precoVenda) * 0.4;
+    if (resultado.length === 0) {
+      console.error(
+        "Webhook: pedido não foi validado durante o processamento.",
+        { pedidoId }
+      );
 
-          if (designerId) {
-            const existing: any[] = await sql`
-              SELECT id FROM designer_earnings
-              WHERE pedido_id = ${Number(pedidoId)}
-                AND designer_artwork_id = ${Number(designerArtworkId)}
-            `;
+      return NextResponse.json({
+        ok: true,
+        ignored: true,
+        reason: "Pedido não validado.",
+      });
+    }
 
-            if (existing.length === 0) {
-              await sql`
-                INSERT INTO designer_earnings (
-                  pedido_id, designer_artwork_id, designer_id,
-                  valor_venda, valor_comissao, status
-                )
-                VALUES (
-                  ${Number(pedidoId)},
-                  ${Number(designerArtworkId)},
-                  ${Number(designerId)},
-                  ${Number(precoVenda)},
-                  ${comissao},
-                  'pendente'
-                )
-              `;
-              console.log(
-                `✅ EARNING registrado: pedido #${pedidoId}, designer_id=${designerId}, comissao=R$ ${comissao.toFixed(2)}`
-              );
+    console.log(`Pedido #${pedidoId} confirmado como pago.`);
 
-              await sendDesignerSaleNotification(
-                item.designer_email || "",
-                item.designer_nome || "Designer",
-                Number(pedidoId),
-                Number(precoVenda),
-                comissao
-              ).catch((err) =>
-                console.error(`⚠️ Falha ao enviar e-mail para designer ${designerId}:`, err.message)
-              );
-            }
-          }
-        }
+    // Notifica somente sobre comissões efetivamente inseridas agora.
+    // Falha no e-mail não desfaz a confirmação nem duplica a comissão.
+    for (const row of resultado) {
+      if (row.earning_id == null) continue;
+
+      const email = String(row.designer_email || "");
+      const nome = String(row.designer_nome || "Designer");
+      const designerId = row.designer_id;
+      const valorVenda = Number(row.valor_venda);
+      const valorComissao = Number(row.valor_comissao);
+
+      console.log("Comissão registrada.", {
+        pedidoId,
+        designerId,
+        valorVenda,
+        percentual: Number(row.percentual_comissao),
+        valorComissao,
+      });
+
+      if (email) {
+        await sendDesignerSaleNotification(
+          email,
+          nome,
+          Number(pedidoId),
+          valorVenda,
+          valorComissao
+        ).catch((error: unknown) => {
+          console.error(
+            `Falha ao enviar e-mail para designer ${String(designerId)}:`,
+            error instanceof Error ? error.message : "Erro desconhecido"
+          );
+        });
       }
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (error: any) {
-    console.error("EXCEÇÃO NO WEBHOOK DO MERCADO PAGO:", error);
-    return NextResponse.json({ ok: true, error: error?.message }, { status: 200 });
+  } catch (error: unknown) {
+    console.error(
+      "Erro ao processar webhook do Mercado Pago:",
+      error instanceof Error ? error.message : "Erro desconhecido"
+    );
+
+    // Erros transitórios devem permitir nova tentativa do Mercado Pago.
+    return NextResponse.json(
+      { error: "Falha ao processar a notificação." },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ status: "Webhook SIAC STUDIO Online" });
+  return NextResponse.json({
+    status: "Webhook SIAC STUDIO Online",
+  });
 }

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     const sql = neon(dbUrl);
 
     const designers = await sql`
-      SELECT id, nome, email, senha
+      SELECT id, nome, email, senha, status
       FROM designers
       WHERE LOWER(email) = ${email}
       LIMIT 1
@@ -54,13 +54,29 @@ export async function POST(request: Request) {
     const senhaValida = await bcrypt.compare(senha, designer.senha);
 
     if (!senhaValida) {
-      return NextResponse.json(
-        { error: "E-mail ou senha incorretos." },
-        { status: 401 }
-      );
-    }
+  return NextResponse.json(
+    { error: "E-mail ou senha incorretos." },
+    { status: 401 }
+  );
+}
 
-    await createDesignerSession(Number(designer.id));
+const status = String(designer.status ?? "").toLowerCase();
+
+if (status === "suspenso") {
+  return NextResponse.json(
+    { error: "Acesso suspenso. Entre em contato com a administração." },
+    { status: 403 }
+  );
+}
+
+if (status !== "aprovado" && status !== "approved") {
+  return NextResponse.json(
+    { error: "Seu cadastro ainda aguarda aprovação da administração." },
+    { status: 403 }
+  );
+}
+
+await createDesignerSession(Number(designer.id));
 
     return NextResponse.json({
       ok: true,
